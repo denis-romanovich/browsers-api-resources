@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Badge Demo</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        button {
+            font-size: 18px;
+            padding: 12px 24px;
+            margin: 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background: #007AFF;
+            color: white;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        button:active {
+            transform: scale(0.95);
+        }
+        .clear {
+            background: #FF3B30;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #f0f0f0;
+            font-family: monospace;
+        }
+        .supported {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .unsupported {
+            background: #ffebee;
+            color: #c62828;
+        }
+        input {
+            font-size: 18px;
+            padding: 8px;
+            width: 80px;
+            text-align: center;
+            margin: 10px;
+        }
+        h1 {
+            margin-bottom: 30px;
+        }
+        .note {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #666;
+            text-align: left;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>📱 PWA Badging API Demo</h1>
+    
+    <div id="support-status" class="status">Проверка поддержки...</div>
+    
+    <div style="margin: 30px 0;">
+        <input type="number" id="badge-count" value="5" min="0" max="999">
+        <button id="set-badge">Установить бейдж</button>
+        <button id="clear-badge" class="clear">Очистить бейдж</button>
+        <button id="set-dot">Только точка</button>
+    </div>
+    
+    <div class="note">
+        <strong>📌 Инструкция:</strong><br>
+        1. Установите приложение (кнопка "+" в адресной строке)<br>
+        2. Запустите из панели задач / Dock<br>
+        3. Используйте кнопки выше<br>
+        4. Бейдж появится на иконке приложения<br>
+        <br>
+        <strong>ℹ️ Только для Chrome/Edge на Windows/macOS</strong>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>

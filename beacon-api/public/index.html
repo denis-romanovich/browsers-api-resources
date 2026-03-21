@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Beacon API Test</title>
+</head>
+<body>
+    <h1>📡 Beacon API Test</h1>
+    <p>Открой консоль (F12) и закрой страницу</p>
+    
+    <script>
+        const startTime = Date.now();
+        
+        window.addEventListener('unload', () => {
+            const data = JSON.stringify({
+                event: 'page_close',
+                duration: Date.now() - startTime,
+                url: location.pathname,
+                time: new Date().toISOString()
+            });
+            
+            navigator.sendBeacon('/api/analytics', data);
+            console.log('📤 Beacon отправлен');
+        });
+    </script>
+</body>
+</html>

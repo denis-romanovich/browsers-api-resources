@@ -1,0 +1,57 @@
+# Зависимости
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Логи
+logs/
+*.log
+
+# Файлы окружения
+.env
+.env.local
+.env.*.local
+
+# Директории сборки
+dist/
+build/
+coverage/
+
+# Кэш
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+
+# IDE и редакторы
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Файлы пакетов
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Временные файлы
+*.tmp
+*.temp
+
+# Тесты
+coverage/
+.nyc_output/
+
+# Докер
+.dockerignore
+
+# TypeScript
+*.tsbuildinfo
