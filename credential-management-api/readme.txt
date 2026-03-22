@@ -1,0 +1,1 @@
+Use "Open with live server" in VS Code

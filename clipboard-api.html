@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clipboard API Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <h1>📋 Clipboard API Demo</h1>
+    
+    <textarea id="textArea" placeholder="Введите текст..."></textarea>
+    
+    <div>
+        <button onclick="copyText()">📋 Копировать текст</button>
+        <button onclick="pasteText()">📄 Вставить текст</button>
+        <button onclick="clearStatus()">Очистить</button>
+    </div>
+    
+    <div id="status" class="status">Готов к работе</div>
+    
+    <script>
+        const textArea = document.getElementById('textArea');
+        const statusDiv = document.getElementById('status');
+        
+        async function copyText() {
+            const text = textArea.value;
+            if (!text) {
+                statusDiv.innerHTML = '⚠️ Нет текста для копирования';
+                return;
+            }
+            
+            try {
+                await navigator.clipboard.writeText(text);
+                statusDiv.innerHTML = '✅ Текст скопирован: "' + text.substring(0, 50) + '"';
+            } catch (err) {
+                statusDiv.innerHTML = '❌ Ошибка копирования: ' + err.message;
+            }
+        }
+        
+        async function pasteText() {
+            try {
+                const text = await navigator.clipboard.readText();
+                textArea.value = text;
+                statusDiv.innerHTML = '✅ Текст вставлен: "' + text.substring(0, 50) + '"';
+            } catch (err) {
+                statusDiv.innerHTML = '❌ Ошибка вставки: ' + err.message;
+            }
+        }
+        
+        function clearStatus() {
+            statusDiv.innerHTML = 'Готов к работе';
+        }
+        
+        // Проверка поддержки
+        if (!navigator.clipboard) {
+            statusDiv.innerHTML = '❌ Clipboard API не поддерживается вашим браузером';
+        }
+    </script>
+</body>
+</html>

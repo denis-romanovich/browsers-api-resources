@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Compute Pressure Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        .meter {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .meter-fill {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+            background: #4caf50;
+        }
+        
+        .meter-fill.high {
+            background: #ff9800;
+        }
+        
+        .meter-fill.critical {
+            background: #f44336;
+        }
+        
+        .info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+        
+        .task {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007AFF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <h1>💻 Compute Pressure API</h1>
+    
+    <div id="status" class="status"></div>
+    
+    <div class="info">
+        <strong>📊 Текущая нагрузка CPU:</strong>
+        <div class="meter">
+            <div id="pressureMeter" class="meter-fill"></div>
+        </div>
+        <div id="pressureInfo">Ожидание данных...</div>
+    </div>
+    
+    <div>
+        <button onclick="startHeavyTask()">🔥 Запустить тяжёлую задачу</button>
+        <button onclick="stopHeavyTask()">⏹️ Остановить</button>
+        <button onclick="startAnimation()">🎬 Запустить анимацию</button>
+        <button onclick="stopAnimation()">⏸️ Остановить анимацию</button>
+    </div>
+    
+    <div id="taskStatus"></div>
+    <div id="animationArea"></div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const pressureMeter = document.getElementById('pressureMeter');
+        const pressureInfo = document.getElementById('pressureInfo');
+        const taskStatus = document.getElementById('taskStatus');
+        const animationArea = document.getElementById('animationArea');
+        
+        let heavyTaskInterval = null;
+        let animationId = null;
+        let observer = null;
+        
+        // Проверка поддержки
+        if ('PressureObserver' in window) {
+            statusDiv.innerHTML = '✅ Compute Pressure API поддерживается';
+            statusDiv.style.background = '#e8f5e9';
+            statusDiv.style.color = '#2e7d32';
+            
+            // Создаём наблюдатель
+            observer = new PressureObserver((updates) => {
+                const latest = updates[updates.length - 1];
+                
+                if (latest.state === 'nominal') {
+                    updatePressureUI(0, '✅ Нормальная нагрузка', 'low');
+                } else if (latest.state === 'fair') {
+                    updatePressureUI(50, '⚠️ Средняя нагрузка', 'medium');
+                } else if (latest.state === 'serious') {
+                    updatePressureUI(75, '🔴 Высокая нагрузка', 'high');
+                } else if (latest.state === 'critical') {
+                    updatePressureUI(95, '💀 Критическая нагрузка', 'critical');
+                }
+                
+                // Адаптируем приложение
+                adaptToPressure(latest.state);
+            });
+            
+            // Начинаем наблюдение
+            observer.observe('cpu', { sampleInterval: 1000 });
+            
+        } else {
+            statusDiv.innerHTML = '❌ Compute Pressure API не поддерживается. Используйте Chrome/Edge 120+';
+            statusDiv.style.background = '#ffebee';
+            statusDiv.style.color = '#c62828';
+        }
+        
+        function updatePressureUI(percent, text, level) {
+            pressureMeter.style.width = `${percent}%`;
+            pressureInfo.innerHTML = `${text} (${Math.round(percent)}%)`;
+            
+            pressureMeter.classList.remove('high', 'critical');
+            if (level === 'high') pressureMeter.classList.add('high');
+            if (level === 'critical') pressureMeter.classList.add('critical');
+        }
+        
+        function adaptToPressure(state) {
+            // Адаптация в зависимости от нагрузки
+            if (state === 'critical') {
+                // Критическая нагрузка - отключаем всё
+                if (heavyTaskInterval) stopHeavyTask();
+                if (animationId) stopAnimation();
+                taskStatus.innerHTML = '⚠️ Высокая нагрузка CPU - тяжёлые задачи приостановлены';
+                
+            } else if (state === 'serious') {
+                // Высокая нагрузка - снижаем качество
+                if (animationId) {
+                    // Уменьшаем FPS анимации
+                    cancelAnimationFrame(animationId);
+                    startAnimationLowQuality();
+                }
+                taskStatus.innerHTML = '⚡ Высокая нагрузка - работа в энергосберегающем режиме';
+                
+            } else {
+                // Нормальная нагрузка
+                taskStatus.innerHTML = '✅ Оптимальный режим работы';
+            }
+        }
+        
+        // Тяжёлая задача (нагрузка на CPU)
+        function startHeavyTask() {
+            if (heavyTaskInterval) return;
+            
+            taskStatus.innerHTML = '🔥 Выполняется тяжёлая задача...';
+            
+            heavyTaskInterval = setInterval(() => {
+                // Имитация тяжёлых вычислений
+                for (let i = 0; i < 10000000; i++) {
+                    Math.sqrt(i) * Math.random();
+                }
+            }, 100);
+        }
+        
+        function stopHeavyTask() {
+            if (heavyTaskInterval) {
+                clearInterval(heavyTaskInterval);
+                heavyTaskInterval = null;
+                taskStatus.innerHTML = '⏹️ Тяжёлая задача остановлена';
+            }
+        }
+        
+        // Анимация
+        let angle = 0;
+        
+        function startAnimation() {
+            if (animationId) return;
+            
+            animationArea.innerHTML = '<canvas id="canvas" width="400" height="200"></canvas>';
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            function animate() {
+                angle += 0.02;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Рисуем сложную анимацию
+                for (let i = 0; i < 50; i++) {
+                    const x = canvas.width / 2 + Math.sin(angle + i) * 100;
+                    const y = canvas.height / 2 + Math.cos(angle * 0.7 + i) * 50;
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, 5, 0, Math.PI * 2);
+                    ctx.fillStyle = `hsl(${angle * 100 + i * 7}, 70%, 50%)`;
+                    ctx.fill();
+                }
+                
+                animationId = requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+        
+        function startAnimationLowQuality() {
+            // Упрощённая анимация для высокой нагрузки
+            animationArea.innerHTML = '<canvas id="canvas" width="400" height="200"></canvas>';
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            let lowAngle = 0;
+            
+            function animateLow() {
+                lowAngle += 0.05;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Только 10 объектов вместо 50
+                for (let i = 0; i < 10; i++) {
+                    const x = canvas.width / 2 + Math.sin(lowAngle + i) * 100;
+                    const y = canvas.height / 2 + Math.cos(lowAngle * 0.7 + i) * 50;
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, 3, 0, Math.PI * 2);
+                    ctx.fillStyle = `hsl(${lowAngle * 100}, 70%, 50%)`;
+                    ctx.fill();
+                }
+                
+                animationId = requestAnimationFrame(animateLow);
+            }
+            
+            animateLow();
+        }
+        
+        function stopAnimation() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+                animationArea.innerHTML = '';
+            }
+        }
+    </script>
+</body>
+</html>

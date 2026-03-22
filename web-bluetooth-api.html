@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web Bluetooth Demo</title>
+</head>
+<body>
+    <h1>💓 Web Bluetooth</h1>
+    <button id="connectBtn">🔌 Подключить пульсометр</button>
+    <div id="heartRate">-- bpm</div>
+
+    <script>
+        const connectBtn = document.getElementById('connectBtn');
+        const heartRateDiv = document.getElementById('heartRate');
+        
+        connectBtn.onclick = async () => {
+            try {
+                // 1. Запрашиваем устройство с сервисом Heart Rate
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: ['heart_rate'] }]
+                });
+                
+                // 2. Подключаемся
+                const server = await device.gatt.connect();
+                
+                // 3. Получаем сервис
+                const service = await server.getPrimaryService('heart_rate');
+                
+                // 4. Получаем характеристику измерения пульса
+                const characteristic = await service.getCharacteristic('heart_rate_measurement');
+                
+                // 5. Подписываемся на изменения
+                characteristic.addEventListener('characteristicvaluechanged', (event) => {
+                    const value = event.target.value;
+                    const heartRate = value.getUint8(1); // bpm
+                    heartRateDiv.innerHTML = `${heartRate} bpm 💓`;
+                });
+                
+                await characteristic.startNotifications();
+                heartRateDiv.innerHTML = '✅ Подключено, ждём данные...';
+                
+            } catch (error) {
+                console.error('Ошибка:', error);
+                heartRateDiv.innerHTML = '❌ Ошибка: ' + error.message;
+            }
+        };
+    </script>
+</body>
+</html>

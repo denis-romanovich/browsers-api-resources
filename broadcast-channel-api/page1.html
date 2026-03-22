@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Страница 1</title>
+</head>
+<body>
+    <h1>📡 Страница 1</h1>
+    <input type="text" id="message" placeholder="Введите сообщение">
+    <button onclick="send()">Отправить</button>
+    <div id="log"></div>
+
+    <script>
+        const channel = new BroadcastChannel('chat');
+        const log = document.getElementById('log');
+
+        channel.onmessage = (event) => {
+            log.innerHTML += `<div>📥 Получено: ${event.data}</div>`;
+        };
+
+        function send() {
+            const msg = document.getElementById('message').value;
+            channel.postMessage(msg);
+            log.innerHTML += `<div>📤 Отправлено: ${msg}</div>`;
+            document.getElementById('message').value = '';
+        }
+    </script>
+</body>
+</html>

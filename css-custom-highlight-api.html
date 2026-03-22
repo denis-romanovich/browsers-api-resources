@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        ::highlight(search) {
+            background-color: #ffeb3b;
+            color: #000;
+        }
+        
+        ::highlight(current) {
+            background-color: #ff6b6b;
+            color: white;
+        }
+        
+        body {
+            font-family: system-ui;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        .controls {
+            margin: 20px 0;
+        }
+        
+        input {
+            padding: 8px;
+            width: 200px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            margin-left: 8px;
+            cursor: pointer;
+        }
+        
+        .stats {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        #text {
+            line-height: 1.6;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Поиск с подсветкой</h1>
+    
+    <div class="controls">
+        <input type="text" id="searchInput" placeholder="Поиск...">
+        <button onclick="search()">Найти</button>
+        <button onclick="clearSearch()">Очистить</button>
+    </div>
+    
+    <div class="stats" id="stats"></div>
+    
+    <div id="text">
+        <p>JavaScript — это язык программирования, который используется для создания интерактивных веб-страниц.</p>
+        <p>JavaScript был создан в 1995 году и с тех пор стал одним из самых популярных языков.</p>
+        <p>Современный JavaScript используется не только в браузерах, но и на сервере (Node.js).</p>
+        <p>JavaScript поддерживает объектно-ориентированное и функциональное программирование.</p>
+    </div>
+
+    <script>
+        const textElement = document.getElementById('text');
+        const searchInput = document.getElementById('searchInput');
+        const statsDiv = document.getElementById('stats');
+        
+        function search() {
+            const query = searchInput.value.trim();
+            if (!query) return;
+            
+            // Создаём подсветку
+            const highlight = new Highlight();
+            let totalMatches = 0;
+            
+            // Проходим по всем текстовым узлам
+            const walker = document.createTreeWalker(
+                textElement,
+                NodeFilter.SHOW_TEXT,
+                {
+                    acceptNode: function(node) {
+                        // Пропускаем пустые и скрипты
+                        if (node.textContent.trim().length === 0) {
+                            return NodeFilter.FILTER_REJECT;
+                        }
+                        return NodeFilter.FILTER_ACCEPT;
+                    }
+                }
+            );
+            
+            const textNodes = [];
+            while (walker.nextNode()) {
+                textNodes.push(walker.currentNode);
+            }
+            
+            // Ищем вхождения
+            textNodes.forEach(node => {
+                const text = node.textContent;
+                const lowerText = text.toLowerCase();
+                const lowerQuery = query.toLowerCase();
+                let index = lowerText.indexOf(lowerQuery);
+                
+                while (index !== -1) {
+                    const range = new Range();
+                    range.setStart(node, index);
+                    range.setEnd(node, index + query.length);
+                    highlight.add(range);
+                    totalMatches++;
+                    index = lowerText.indexOf(lowerQuery, index + 1);
+                }
+            });
+            
+            // Применяем подсветку
+            CSS.highlights.set('search', highlight);
+            
+            // Обновляем статистику
+            statsDiv.innerHTML = `✅ Найдено совпадений: ${totalMatches}`;
+            
+            // Прокручиваем к первому результату
+            if (totalMatches > 0) {
+                const firstRange = [...highlight].sort((a, b) => 
+                    a.startOffset - b.startOffset
+                )[0];
+                
+                const rect = firstRange.getBoundingClientRect();
+                window.scrollTo({
+                    top: window.scrollY + rect.top - 100,
+                    behavior: 'smooth'
+                });
+            }
+        }
+        
+        function clearSearch() {
+            CSS.highlights.delete('search');
+            statsDiv.innerHTML = '';
+            searchInput.value = '';
+        }
+        
+        // Поиск по Enter
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') search();
+        });
+    </script>
+</body>
+</html>
