@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Device Orientation</title>
+    <style>
+        body { font-family: system-ui; text-align: center; padding: 50px; max-width: 600px; margin: 0 auto; }
+        .values { font-size: 24px; margin: 20px; padding: 20px; background: #f0f0f0; border-radius: 16px; }
+        .compass { width: 200px; height: 200px; margin: 20px auto; position: relative; }
+        .arrow { width: 4px; height: 80px; background: red; margin: 0 auto; transform-origin: 50% 100%; transition: transform 0.1s; }
+        button { padding: 12px 24px; font-size: 16px; background: #007AFF; color: white; border: none; border-radius: 8px; cursor: pointer; margin: 10px; }
+        .status { padding: 10px; margin: 10px; border-radius: 8px; background: #e8f5e9; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <h1>🧭 Device Orientation</h1>
+    
+    <div id="status" class="status">⏳ Ожидание разрешения...</div>
+    <button id="requestBtn" style="display:none">🔓 Разрешить доступ</button>
+    
+    <div class="values">
+        <div>🧭 Alpha (компас): <strong id="alpha">0</strong>°</div>
+        <div>📐 Beta (вперёд/назад): <strong id="beta">0</strong>°</div>
+        <div>📏 Gamma (влево/вправо): <strong id="gamma">0</strong>°</div>
+    </div>
+    
+    <div class="compass">
+        <div class="arrow" id="arrow"></div>
+        <div style="position:relative; top:-90px;">⬆️ N</div>
+    </div>
+    
+    <div class="values" style="margin-top: 20px;">
+        <div>⚡ Ускорение X: <span id="accX">0</span></div>
+        <div>⚡ Ускорение Y: <span id="accY">0</span></div>
+        <div>⚡ Ускорение Z: <span id="accZ">0</span></div>
+    </div>
+    
+    <script>
+        const alphaSpan = document.getElementById('alpha');
+        const betaSpan = document.getElementById('beta');
+        const gammaSpan = document.getElementById('gamma');
+        const arrow = document.getElementById('arrow');
+        const statusDiv = document.getElementById('status');
+        const requestBtn = document.getElementById('requestBtn');
+        
+        // Обработчик ориентации
+        function onOrientation(event) {
+            const alpha = Math.round(event.alpha || 0);
+            const beta = Math.round(event.beta || 0);
+            const gamma = Math.round(event.gamma || 0);
+            
+            alphaSpan.textContent = alpha;
+            betaSpan.textContent = beta;
+            gammaSpan.textContent = gamma;
+            
+            arrow.style.transform = `rotate(${alpha}deg)`;
+            
+            statusDiv.innerHTML = '✅ Данные получаются';
+            statusDiv.style.background = '#e8f5e9';
+        }
+        
+        // Обработчик движения
+        function onMotion(event) {
+            const acc = event.acceleration;
+            if (acc) {
+                document.getElementById('accX').textContent = (acc.x || 0).toFixed(2);
+                document.getElementById('accY').textContent = (acc.y || 0).toFixed(2);
+                document.getElementById('accZ').textContent = (acc.z || 0).toFixed(2);
+            }
+        }
+        
+        // iOS требует явного разрешения
+        if (typeof DeviceOrientationEvent !== 'undefined' && 
+            typeof DeviceOrientationEvent.requestPermission === 'function') {
+            
+            statusDiv.innerHTML = '🍎 iOS: требуется разрешение';
+            requestBtn.style.display = 'inline-block';
+            
+            requestBtn.onclick = async () => {
+                try {
+                    const permission = await DeviceOrientationEvent.requestPermission();
+                    if (permission === 'granted') {
+                        window.addEventListener('deviceorientation', onOrientation);
+                        window.addEventListener('devicemotion', onMotion);
+                        statusDiv.innerHTML = '✅ Разрешение получено, поворачивайте устройство';
+                        requestBtn.style.display = 'none';
+                    } else {
+                        statusDiv.innerHTML = '❌ Разрешение отклонено';
+                        statusDiv.style.background = '#ffebee';
+                        statusDiv.style.color = '#c62828';
+                    }
+                } catch (err) {
+                    statusDiv.innerHTML = `❌ Ошибка: ${err.message}`;
+                }
+            };
+        } else {
+            // Android и другие — разрешение не требуется
+            window.addEventListener('deviceorientation', onOrientation);
+            window.addEventListener('devicemotion', onMotion);
+            statusDiv.innerHTML = '✅ Поворачивайте устройство';
+            requestBtn.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
