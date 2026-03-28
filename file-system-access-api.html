@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File System Access API Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .status {
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: #f0f0f0;
+        }
+        
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .file-list {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+        
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>📁 File System Access API</h1>
+    
+    <div id="status" class="status">⏳ Проверка поддержки...</div>
+    
+    <div>
+        <button id="openFileBtn">📂 Открыть файл</button>
+        <button id="saveFileBtn">💾 Сохранить файл</button>
+        <button id="openDirBtn">📁 Выбрать папку</button>
+        <button id="createFileBtn">➕ Создать файл в папке</button>
+    </div>
+    
+    <div id="fileContentArea" style="display: none;">
+        <h3>📄 Содержимое файла</h3>
+        <textarea id="fileContent" placeholder="Содержимое файла..."></textarea>
+        <button id="saveContentBtn">💾 Сохранить изменения</button>
+    </div>
+    
+    <div id="dirContent" class="file-list" style="display: none;">
+        <strong>📁 Содержимое папки:</strong>
+        <div id="fileList"></div>
+    </div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const fileContentArea = document.getElementById('fileContentArea');
+        const fileContent = document.getElementById('fileContent');
+        const dirContentDiv = document.getElementById('dirContent');
+        const fileListDiv = document.getElementById('fileList');
+        
+        let currentFileHandle = null;
+        let currentDirHandle = null;
+        
+        // Проверка поддержки
+        if ('showOpenFilePicker' in window) {
+            statusDiv.innerHTML = '✅ File System Access API поддерживается';
+            statusDiv.className = 'status success';
+        } else {
+            statusDiv.innerHTML = '❌ File System Access API не поддерживается. Используйте Chrome/Edge 86+';
+            statusDiv.className = 'status error';
+            document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+        }
+        
+        // 1. Открыть файл
+        async function openFile() {
+            try {
+                const [fileHandle] = await window.showOpenFilePicker({
+                    types: [{
+                        description: 'Текстовые файлы',
+                        accept: { 'text/plain': ['.txt', '.js', '.html', '.css'] }
+                    }],
+                    multiple: false
+                });
+                
+                currentFileHandle = fileHandle;
+                const file = await fileHandle.getFile();
+                const contents = await file.text();
+                
+                fileContent.value = contents;
+                fileContentArea.style.display = 'block';
+                dirContentDiv.style.display = 'none';
+                
+                statusDiv.innerHTML = `✅ Открыт: ${file.name} (${file.size} байт)`;
+                statusDiv.className = 'status success';
+                
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    statusDiv.innerHTML = `❌ Ошибка: ${err.message}`;
+                    statusDiv.className = 'status error';
+                }
+            }
+        }
+        
+        // 2. Сохранить файл (новый)
+        async function saveFile() {
+            try {
+                const fileHandle = await window.showSaveFilePicker({
+                    suggestedName: 'document.txt',
+                    types: [{
+                        description: 'Текстовый файл',
+                        accept: { 'text/plain': ['.txt'] }
+                    }]
+                });
+                
+                const writable = await fileHandle.createWritable();
+                await writable.write(fileContent.value);
+                await writable.close();
+                
+                currentFileHandle = fileHandle;
+                statusDiv.innerHTML = `✅ Файл сохранён: ${fileHandle.name}`;
+                statusDiv.className = 'status success';
+                
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    statusDiv.innerHTML = `❌ Ошибка: ${err.message}`;
+                    statusDiv.className = 'status error';
+                }
+            }
+        }
+        
+        // 3. Сохранить изменения в открытом файле
+        async function saveChanges() {
+            if (!currentFileHandle) {
+                statusDiv.innerHTML = '⚠️ Сначала откройте файл';
+                return;
+            }
+            
+            try {
+                const writable = await currentFileHandle.createWritable();
+                await writable.write(fileContent.value);
+                await writable.close();
+                
+                statusDiv.innerHTML = `✅ Изменения сохранены в ${currentFileHandle.name}`;
+                statusDiv.className = 'status success';
+                
+            } catch (err) {
+                statusDiv.innerHTML = `❌ Ошибка: ${err.message}`;
+                statusDiv.className = 'status error';
+            }
+        }
+        
+        // 4. Выбрать папку
+        async function openDirectory() {
+            try {
+                const dirHandle = await window.showDirectoryPicker();
+                currentDirHandle = dirHandle;
+                
+                dirContentDiv.style.display = 'block';
+                fileContentArea.style.display = 'none';
+                
+                await listDirectory(dirHandle);
+                
+                statusDiv.innerHTML = `✅ Папка открыта: ${dirHandle.name}`;
+                statusDiv.className = 'status success';
+                
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    statusDiv.innerHTML = `❌ Ошибка: ${err.message}`;
+                    statusDiv.className = 'status error';
+                }
+            }
+        }
+        
+        // 5. Список файлов в папке
+        async function listDirectory(dirHandle) {
+            fileListDiv.innerHTML = '';
+            
+            for await (const [name, handle] of dirHandle.entries()) {
+                const item = document.createElement('div');
+                const icon = handle.kind === 'file' ? '📄' : '📁';
+                item.textContent = `${icon} ${name}${handle.kind === 'directory' ? '/' : ''}`;
+                item.style.cursor = 'pointer';
+                item.style.padding = '4px';
+                item.onmouseover = () => item.style.background = '#f0f0f0';
+                item.onmouseout = () => item.style.background = 'transparent';
+                
+                if (handle.kind === 'file') {
+                    item.onclick = async () => {
+                        const file = await handle.getFile();
+                        const contents = await file.text();
+                        fileContent.value = contents;
+                        fileContentArea.style.display = 'block';
+                        currentFileHandle = handle;
+                        statusDiv.innerHTML = `✅ Открыт: ${file.name}`;
+                    };
+                } else {
+                    item.onclick = async () => {
+                        await listDirectory(handle);
+                        currentDirHandle = handle;
+                    };
+                }
+                
+                fileListDiv.appendChild(item);
+            }
+        }
+        
+        // 6. Создать файл в выбранной папке
+        async function createFileInDir() {
+            if (!currentDirHandle) {
+                statusDiv.innerHTML = '⚠️ Сначала выберите папку';
+                return;
+            }
+            
+            const fileName = prompt('Введите имя файла:', 'newfile.txt');
+            if (!fileName) return;
+            
+            try {
+                const fileHandle = await currentDirHandle.getFileHandle(fileName, { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write('');
+                await writable.close();
+                
+                await listDirectory(currentDirHandle);
+                statusDiv.innerHTML = `✅ Файл создан: ${fileName}`;
+                
+            } catch (err) {
+                statusDiv.innerHTML = `❌ Ошибка: ${err.message}`;
+            }
+        }
+
+        document.getElementById('openFileBtn').onclick = openFile;
+        document.getElementById('saveFileBtn').onclick = saveFile;
+        document.getElementById('openDirBtn').onclick = openDirectory;
+        document.getElementById('createFileBtn').onclick = createFileInDir;
+        document.getElementById('saveContentBtn').onclick = saveChanges;
+    </script>
+</body>
+</html>

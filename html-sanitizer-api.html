@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HTML Sanitizer Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 10px;
+            font-family: monospace;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+        
+        .output {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            min-height: 100px;
+            border: 1px solid #ddd;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .warning {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        
+        pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧹 HTML Sanitizer Demo</h1>
+    
+    <textarea id="input" rows="5">
+&lt;script&gt;alert('xss')&lt;/script&gt;
+&lt;p&gt;Привет, &lt;b&gt;мир&lt;/b&gt;!&lt;/p&gt;
+&lt;img src="x" onerror="alert('xss')"&gt;
+&lt;a href="javascript:alert('xss')"&gt;Вредоносная ссылка&lt;/a&gt;</textarea>
+    
+    <button id="sanitizeBtn">🧹 Очистить HTML</button>
+    
+    <div class="output" id="output">
+        <em style="color: #999;">Результат появится здесь...</em>
+    </div>
+    <div id="status" class="status"></div>
+    
+    <script>
+        const input = document.getElementById('input');
+        const output = document.getElementById('output');
+        const status = document.getElementById('status');
+        
+        function sanitizeHTML() {
+            // Проверяем поддержку API
+            if (!window.Sanitizer) {
+                status.innerHTML = '❌ HTML Sanitizer API не поддерживается. Используйте Chrome/Edge 120+ с флагом.';
+                status.className = 'status error';
+                return;
+            }
+            
+            const dirtyHTML = input.value;
+            
+            try {
+                // Создаём санитайзер
+                const sanitizer = new Sanitizer({
+                    allowElements: ['p', 'b', 'i', 'strong', 'em', 'a', 'ul', 'li', 'div', 'span'],
+                    allowAttributes: {
+                        'a': ['href']
+                    },
+                    dropElements: ['script', 'iframe', 'object']
+                });
+                
+                // Используем setHTML (современный способ)
+                const div = document.createElement('div');
+                
+                if (div.setHTML) {
+                    // Новый способ (Chrome 120+)
+                    div.setHTML(dirtyHTML, { sanitizer });
+                    output.innerHTML = div.innerHTML;
+                } else {
+                    // Альтернативный способ
+                    const cleanHTML = sanitizer.sanitizeFor('div', dirtyHTML);
+                    output.innerHTML = cleanHTML.innerHTML;
+                }
+                
+                status.innerHTML = '✅ HTML очищен (скрипты и обработчики удалены)';
+                status.className = 'status success';
+                
+            } catch (err) {
+                status.innerHTML = `❌ Ошибка: ${err.message}`;
+                status.className = 'status error';
+                console.error(err);
+            }
+        }
+        
+        document.getElementById('sanitizeBtn').onclick = sanitizeHTML;
+        
+        // Автоматическая очистка при загрузке
+        setTimeout(sanitizeHTML, 100);
+    </script>
+</body>
+</html>

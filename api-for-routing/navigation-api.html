@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Navigation API Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        nav {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        nav a {
+            margin: 0 10px;
+            cursor: pointer;
+            color: #007AFF;
+            text-decoration: none;
+        }
+        
+        .page {
+            background: #f9f9f9;
+            padding: 30px;
+            border-radius: 12px;
+            margin: 20px 0;
+            min-height: 200px;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            background: #f0f0f0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧭 Navigation API</h1>
+    
+    <nav>
+        <a onclick="navigateTo('home')">🏠 Главная</a>
+        <a onclick="navigateTo('about')">📖 О нас</a>
+        <a onclick="navigateTo('contact')">📞 Контакты</a>
+    </nav>
+    
+    <div id="page" class="page">
+        <h2>Главная</h2>
+        <p>Добро пожаловать!</p>
+    </div>
+    
+    <div>
+        <button id="backBtn" disabled>◀ Назад</button>
+        <button id="forwardBtn" disabled>Вперёд ▶</button>
+    </div>
+    
+    <div id="status" class="status">⏳ Проверка...</div>
+    
+    <script>
+        const pageDiv = document.getElementById('page');
+        const statusDiv = document.getElementById('status');
+        const backBtn = document.getElementById('backBtn');
+        const forwardBtn = document.getElementById('forwardBtn');
+        
+        const pages = {
+            home: '<h2>🏠 Главная</h2><p>Добро пожаловать в Navigation API!</p>',
+            about: '<h2>📖 О нас</h2><p>Это демо современного API для навигации в SPA.</p>',
+            contact: '<h2>📞 Контакты</h2><p>Email: demo@example.com</p>'
+        };
+        
+        function renderPage(pageId) {
+            pageDiv.innerHTML = pages[pageId] || pages.home;
+        }
+        
+        async function navigateTo(pageId) {
+            if (!window.navigation) return;
+            
+            try {
+                await window.navigation.navigate(`/${pageId}`, {
+                    state: { page: pageId }
+                });
+            } catch (err) {
+                statusDiv.innerHTML = `❌ Ошибка: ${err.message}`;
+            }
+        }
+        
+        // Проверка поддержки
+        if ('navigation' in window) {
+            statusDiv.innerHTML = '✅ Navigation API поддерживается';
+            
+            // Перехват навигации
+            window.navigation.addEventListener('navigate', (event) => {
+                const url = new URL(event.destination.url);
+                const pageId = url.pathname.slice(1) || 'home';
+                
+                event.intercept({
+                    handler: async () => {
+                        renderPage(pageId);
+                        statusDiv.innerHTML = `✅ Страница: ${pageId}`;
+                    }
+                });
+            });
+            
+            // Обновление кнопок
+            function updateButtons() {
+                backBtn.disabled = !window.navigation.canGoBack;
+                forwardBtn.disabled = !window.navigation.canGoForward;
+            }
+            
+            backBtn.onclick = () => window.navigation.back();
+            forwardBtn.onclick = () => window.navigation.forward();
+            
+            window.navigation.addEventListener('navigatesuccess', updateButtons);
+            window.navigation.addEventListener('navigateerror', () => {
+                statusDiv.innerHTML = '❌ Ошибка навигации';
+            });
+            
+            // Текущая страница
+            const current = location.pathname.slice(1) || 'home';
+            renderPage(current);
+            updateButtons();
+            
+        } else {
+            statusDiv.innerHTML = '❌ Navigation API не поддерживается';
+        }
+    </script>
+</body>
+</html>

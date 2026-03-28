@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Document PiP Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        .player {
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+        }
+        
+        video {
+            width: 100%;
+            border-radius: 8px;
+            background: #000;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+        }
+        
+        .status {
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .controls {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>📺 Document PiP Demo</h1>
+    
+    <div id="status" class="status">⏳ Проверка поддержки...</div>
+    
+    <div id="player" class="player">
+        <video id="video" src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4" controls></video>
+        <div class="controls">
+            <button id="pipBtn">📌 Открыть в PiP</button>
+        </div>
+    </div>
+    
+    <div id="message" style="display: none; margin-top: 20px; padding: 10px; background: #fff3cd; border-radius: 8px;">
+        ⚠️ Видео перенесено в PiP-окно
+    </div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const video = document.getElementById('video');
+        const pipBtn = document.getElementById('pipBtn');
+        const playerDiv = document.getElementById('player');
+        const messageDiv = document.getElementById('message');
+        
+        let pipWindow = null;
+        
+        // Проверка поддержки
+        if ('documentPictureInPicture' in window) {
+            statusDiv.innerHTML = '✅ Document Picture-in-Picture поддерживается';
+            statusDiv.style.background = '#e8f5e9';
+            
+            pipBtn.onclick = async () => {
+                // Если окно уже открыто — закрываем
+                if (pipWindow && !pipWindow.closed) {
+                    pipWindow.close();
+                    return;
+                }
+                
+                try {
+                    // Открываем PiP-окно
+                    pipWindow = await window.documentPictureInPicture.requestWindow({
+                        width: 640,
+                        height: 400
+                    });
+                    
+                    // Копируем стили в PiP-окно
+                    [...document.styleSheets].forEach((sheet) => {
+                        try {
+                            const rules = [...sheet.cssRules].map(r => r.cssText).join('');
+                            const style = pipWindow.document.createElement('style');
+                            style.textContent = rules;
+                            pipWindow.document.head.appendChild(style);
+                        } catch (e) {
+                            const link = pipWindow.document.createElement('link');
+                            link.rel = 'stylesheet';
+                            link.href = sheet.href;
+                            pipWindow.document.head.appendChild(link);
+                        }
+                    });
+                    
+                    // Переносим видео в PiP-окно
+                    pipWindow.document.body.appendChild(video);
+                    
+                    // Добавляем кнопку отключения звука
+                    const muteBtn = pipWindow.document.createElement('button');
+                    muteBtn.textContent = '🔇 Mute';
+                    muteBtn.style.margin = '10px';
+                    muteBtn.onclick = () => {
+                        video.muted = !video.muted;
+                        muteBtn.textContent = video.muted ? '🔊 Unmute' : '🔇 Mute';
+                    };
+                    pipWindow.document.body.appendChild(muteBtn);
+                    
+                    // Показываем сообщение
+                    messageDiv.style.display = 'block';
+                    pipBtn.textContent = '❌ Закрыть PiP';
+                    
+                    // Обработка закрытия окна (через X)
+                    pipWindow.addEventListener('pagehide', () => {
+                        // Возвращаем видео обратно
+                        playerDiv.appendChild(video);
+                        messageDiv.style.display = 'none';
+                        pipBtn.textContent = '📌 Открыть в PiP';
+                        pipWindow = null;
+                    });
+                    
+                } catch (err) {
+                    statusDiv.innerHTML = `❌ Ошибка: ${err.message}`;
+                    statusDiv.style.background = '#ffebee';
+                    statusDiv.style.color = '#c62828';
+                }
+            };
+        } else {
+            statusDiv.innerHTML = '❌ Document Picture-in-Picture не поддерживается';
+            statusDiv.style.background = '#ffebee';
+            statusDiv.style.color = '#c62828';
+            pipBtn.disabled = true;
+        }
+    </script>
+</body>
+</html>

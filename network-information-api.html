@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Notifications</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 400px;
+            margin: 100px auto;
+            text-align: center;
+        }
+        button {
+            padding: 12px 24px;
+            margin: 10px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔔 Уведомления</h1>
+    
+    <button id="requestBtn">📢 Запросить разрешение</button>
+    <button id="notifyBtn" disabled>📢 Показать уведомление</button>
+    
+    <div id="status" class="status"></div>
+    
+    <script>
+        const requestBtn = document.getElementById('requestBtn');
+        const notifyBtn = document.getElementById('notifyBtn');
+        const statusDiv = document.getElementById('status');
+        
+        function updateStatus() {
+            const permission = Notification.permission;
+            if (permission === 'default') {
+                statusDiv.innerHTML = '✅ Разрешение есть';
+                statusDiv.style.background = '#e8f5e9';
+                notifyBtn.disabled = false;
+            } else if (permission === 'denied') {
+                statusDiv.innerHTML = '❌ Разрешение запрещено';
+                statusDiv.style.background = '#ffebee';
+            } else {
+                statusDiv.innerHTML = '⏳ Нажмите "Запросить разрешение"';
+                statusDiv.style.background = '#f0f0f0';
+                notifyBtn.disabled = true;
+            }
+        }
+        
+        async function requestPermission() {
+            const permission = await Notification.requestPermission();
+            updateStatus();
+            
+            if (permission === 'granted') {
+                new Notification('✅ Готово!', {
+                    body: 'Теперь можно отправлять уведомления'
+                });
+            }
+        }
+        
+        function showNotification() {
+            new Notification('🔔 Привет!', {
+                body: 'Это тестовое уведомление'
+            });
+        }
+        
+        requestBtn.onclick = requestPermission;
+        notifyBtn.onclick = showNotification;
+        
+        if ('Notification' in window) {
+            updateStatus();
+        } else {
+            statusDiv.innerHTML = '❌ API не поддерживается';
+        }
+    </script>
+</body>
+</html>

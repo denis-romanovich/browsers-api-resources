@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fullscreen API Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            transition: background 0.3s;
+        }
+        
+        .container {
+            text-align: center;
+        }
+        
+        .video-container {
+            position: relative;
+            margin: 20px 0;
+        }
+        
+        video {
+            width: 100%;
+            max-width: 640px;
+            border-radius: 12px;
+            background: #000;
+        }
+        
+        .fullscreen-element {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 16px;
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 20px 0;
+        }
+        
+        .fullscreen-element:hover {
+            transform: scale(1.02);
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .status {
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: #f0f0f0;
+            font-family: monospace;
+        }
+        
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .info {
+            background: #e3f2fd;
+            color: #0c5460;
+        }
+        
+        .controls {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🖥️ Fullscreen API Demo</h1>
+    
+    <div id="status" class="status">⏳ Проверка поддержки...</div>
+    
+    <div class="container">
+        <div class="video-container">
+            <video id="video" src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" controls></video>
+            <div class="controls">
+                <button id="videoFullscreenBtn">🎬 Видео на весь экран</button>
+            </div>
+        </div>
+        
+        <div id="customElement" class="fullscreen-element">
+            <h2>✨ Кастомный элемент</h2>
+            <p>Нажми на меня или на кнопку ниже</p>
+            <button id="elementFullscreenBtn">📦 Этот элемент на весь экран</button>
+        </div>
+        
+        <div>
+            <button id="pageFullscreenBtn">🌍 Вся страница</button>
+            <button id="exitBtn" disabled>❌ Выйти из полноэкранного режима</button>
+        </div>
+    </div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const video = document.getElementById('video');
+        const customElement = document.getElementById('customElement');
+        const videoFullscreenBtn = document.getElementById('videoFullscreenBtn');
+        const elementFullscreenBtn = document.getElementById('elementFullscreenBtn');
+        const pageFullscreenBtn = document.getElementById('pageFullscreenBtn');
+        const exitBtn = document.getElementById('exitBtn');
+        
+        // Проверка поддержки
+        if (document.documentElement.requestFullscreen) {
+            statusDiv.innerHTML = '✅ Fullscreen API поддерживается';
+            statusDiv.className = 'status success';
+        } else {
+            statusDiv.innerHTML = '❌ Fullscreen API не поддерживается';
+            statusDiv.className = 'status error';
+        }
+        
+        // Обновление состояния кнопки выхода
+        function updateExitButton() {
+            const isFullscreen = !!document.fullscreenElement;
+            exitBtn.disabled = !isFullscreen;
+            statusDiv.innerHTML = isFullscreen 
+                ? '🖥️ Полноэкранный режим активен' 
+                : '✅ Fullscreen API готов к работе';
+            statusDiv.className = isFullscreen ? 'status info' : 'status success';
+        }
+        
+        // Выход из полноэкранного режима
+        async function exitFullscreen() {
+            if (document.exitFullscreen) {
+                await document.exitFullscreen();
+                updateExitButton();
+            }
+        }
+        
+        // Вход в полноэкранный режим для элемента
+        async function enterFullscreen(element) {
+            if (!element) return;
+            
+            try {
+                if (element.requestFullscreen) {
+                    await element.requestFullscreen();
+                } else if (element.webkitRequestFullscreen) {
+                    await element.webkitRequestFullscreen(); // Safari
+                } else if (element.msRequestFullscreen) {
+                    await element.msRequestFullscreen(); // IE
+                }
+                updateExitButton();
+            } catch (err) {
+                statusDiv.innerHTML = `❌ Ошибка: ${err.message}`;
+                statusDiv.className = 'status error';
+            }
+        }
+        
+        // Слушаем изменения полноэкранного режима
+        document.addEventListener('fullscreenchange', () => {
+            updateExitButton();
+            
+            if (document.fullscreenElement) {
+                console.log('Вошли в полноэкранный режим:', document.fullscreenElement);
+            } else {
+                console.log('Вышли из полноэкранного режима');
+            }
+        });
+        
+        document.addEventListener('fullscreenerror', (err) => {
+            statusDiv.innerHTML = `❌ Ошибка полноэкранного режима: ${err.message}`;
+            statusDiv.className = 'status error';
+        });
+        
+        // Обработчики
+        videoFullscreenBtn.onclick = () => enterFullscreen(video);
+        elementFullscreenBtn.onclick = () => enterFullscreen(customElement);
+        pageFullscreenBtn.onclick = () => enterFullscreen(document.documentElement);
+        exitBtn.onclick = exitFullscreen;
+        
+        // Клик по кастомному элементу тоже переводит в полноэкранный режим
+        customElement.onclick = () => enterFullscreen(customElement);
+        
+        // Инициализация
+        updateExitButton();
+    </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Popover API Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 600px;
+            margin: 100px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+        }
+        
+        [popover] {
+            background: white;
+            padding: 20px;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 250px;
+            text-align: center;
+        }
+        
+        [popover]::backdrop {
+            background-color: rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <h1>📦 Popover API</h1>
+    
+    <button popovertarget="myPopover">Открыть поповер</button>
+    
+    <div id="myPopover" popover>
+        <h3>Привет!</h3>
+        <p>Это нативный поповер без JavaScript</p>
+        <button popovertarget="myPopover" popovertargetaction="hide">Закрыть</button>
+    </div>
+    
+    <div id="info" style="margin-top: 20px; color: #666;"></div>
+    
+    <script>
+        const popover = document.getElementById('myPopover');
+        const info = document.getElementById('info');
+        
+        popover.addEventListener('beforetoggle', (e) => {
+            info.textContent = e.newState === 'open' ? '🔄 Поповер открывается' : '🔄 Поповер закрывается';
+        });
+        
+        popover.addEventListener('toggle', (e) => {
+            info.textContent = e.newState === 'open' ? '✅ Поповер открыт' : '❌ Поповер закрыт';
+            setTimeout(() => { info.textContent = ''; }, 1500);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Page Visibility API</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 500px;
+            margin: 100px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .status {
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .visible {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .hidden {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .timer {
+            font-size: 48px;
+            font-family: monospace;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>👁️ Page Visibility API</h1>
+    
+    <div id="status" class="status visible">✅ Страница видима</div>
+    <div class="timer">⏱️ Счётчик: <span id="counter">0</span></div>
+    <button id="resetBtn">Сброс</button>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const counterSpan = document.getElementById('counter');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        let counter = 0;
+        let interval = null;
+        
+        function updateStatus() {
+            const isVisible = !document.hidden;
+            
+            if (isVisible) {
+                statusDiv.innerHTML = '✅ Страница видима';
+                statusDiv.className = 'status visible';
+                startCounter();
+            } else {
+                statusDiv.innerHTML = '❌ Страница скрыта (свёрнута)';
+                statusDiv.className = 'status hidden';
+                stopCounter();
+            }
+        }
+        
+        function startCounter() {
+            if (interval) return;
+            interval = setInterval(() => {
+                counter++;
+                counterSpan.textContent = counter;
+            }, 1000);
+        }
+        
+        function stopCounter() {
+            if (interval) {
+                clearInterval(interval);
+                interval = null;
+            }
+        }
+        
+        function resetCounter() {
+            counter = 0;
+            counterSpan.textContent = counter;
+        }
+        
+        // Слушаем изменение видимости
+        document.addEventListener('visibilitychange', updateStatus);
+        
+        resetBtn.onclick = resetCounter;
+        
+        // Инициализация
+        updateStatus();
+    </script>
+</body>
+</html>

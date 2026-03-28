@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Picture-in-Picture Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        video {
+            width: 100%;
+            border-radius: 12px;
+            background: #000;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            background: #f0f0f0;
+            font-family: monospace;
+        }
+        
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <h1>📺 Picture-in-Picture API</h1>
+    
+    <video id="video" src="http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" controls></video>
+    
+    <div class="controls">
+        <button id="pipBtn">📌 Включить PiP</button>
+        <button id="exitPipBtn" disabled>❌ Выйти из PiP</button>
+    </div>
+    
+    <div id="status" class="status">⏳ Проверка поддержки...</div>
+    
+    <script>
+        const video = document.getElementById('video');
+        const pipBtn = document.getElementById('pipBtn');
+        const exitPipBtn = document.getElementById('exitPipBtn');
+        const statusDiv = document.getElementById('status');
+        
+        // Проверка поддержки
+        if ('pictureInPictureEnabled' in document) {
+            statusDiv.innerHTML = '✅ Picture-in-Picture API поддерживается';
+            statusDiv.className = 'status success';
+        } else {
+            statusDiv.innerHTML = '❌ Picture-in-Picture API не поддерживается';
+            pipBtn.disabled = true;
+        }
+        
+        // Включение PiP
+        pipBtn.onclick = async () => {
+            try {
+                await video.requestPictureInPicture();
+                pipBtn.disabled = true;
+                exitPipBtn.disabled = false;
+                statusDiv.innerHTML = '📌 Режим PiP активирован';
+            } catch (err) {
+                statusDiv.innerHTML = `❌ Ошибка: ${err.message}`;
+            }
+        };
+        
+        // Выход из PiP
+        exitPipBtn.onclick = async () => {
+            try {
+                await document.exitPictureInPicture();
+                pipBtn.disabled = false;
+                exitPipBtn.disabled = true;
+                statusDiv.innerHTML = '✅ Выход из PiP';
+            } catch (err) {
+                statusDiv.innerHTML = `❌ Ошибка: ${err.message}`;
+            }
+        };
+        
+        // Слушаем изменения
+        video.addEventListener('enterpictureinpicture', () => {
+            statusDiv.innerHTML = '🎬 Видео в режиме PiP';
+        });
+        
+        video.addEventListener('leavepictureinpicture', () => {
+            statusDiv.innerHTML = '👋 Выход из PiP';
+            pipBtn.disabled = false;
+            exitPipBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>

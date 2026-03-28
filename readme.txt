@@ -1,0 +1,1 @@
+"device-orientation-events-api" require use HTTPS

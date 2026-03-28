@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>History API</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>📜 History API</h1>
+    
+    <div id="content">
+        <h2>Главная</h2>
+        <p>URL: <span id="url"></span></p>
+    </div>
+    
+    <button onclick="goToPage('about')">📖 О нас</button>
+    <button onclick="goToPage('contact')">📞 Контакты</button>
+    <button onclick="back()">◀ Назад</button>
+    <button onclick="forward()">Вперёд ▶</button>
+    
+    <div id="status" class="status"></div>
+    
+    <script>
+        const content = document.getElementById('content');
+        const urlSpan = document.getElementById('url');
+        const status = document.getElementById('status');
+        
+        const pages = {
+            '': '<h2>🏠 Главная</h2><p>Добро пожаловать!</p>',
+            'about': '<h2>📖 О нас</h2><p>Это демо History API.</p>',
+            'contact': '<h2>📞 Контакты</h2><p>Email: demo@example.com</p>'
+        };
+        
+        function updatePage() {
+            const path = location.pathname.slice(1);
+            const page = pages[path] || pages[''];
+            content.innerHTML = page;
+            urlSpan.textContent = location.pathname || '/';
+            status.innerHTML = `Текущий URL: ${location.pathname || '/'} | Длина истории: ${history.length}`;
+        }
+        
+        function goToPage(page) {
+            history.pushState({ page }, page, `/${page}`);
+            updatePage();
+        }
+        
+        function back() {
+            history.back();
+        }
+        
+        function forward() {
+            history.forward();
+        }
+        
+        window.addEventListener('popstate', updatePage);
+        
+        updatePage();
+    </script>
+</body>
+</html>
