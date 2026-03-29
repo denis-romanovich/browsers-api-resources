@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Selection API Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        .text {
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 12px;
+            line-height: 1.6;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+        
+        .info {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 20px 0;
+        }
+        
+        .highlight {
+            background-color: yellow;
+        }
+    </style>
+</head>
+<body>
+    <h1>📝 Selection API</h1>
+    
+    <div class="text" id="text">
+        <p>Выделите любой текст мышкой. Это демонстрация Selection API.</p>
+        <p>Вы можете выделять слова, предложения или целые абзацы.</p>
+        <p>API позволяет получать выделенный текст, управлять выделением и многое другое.</p>
+    </div>
+    
+    <div>
+        <button id="getTextBtn">📋 Получить выделенный текст</button>
+        <button id="clearBtn">🗑️ Очистить выделение</button>
+        <button id="selectAllBtn">✅ Выделить всё</button>
+        <button id="highlightBtn">🎨 Подсветить выделение</button>
+    </div>
+    
+    <div id="info" class="info">
+        📌 Выделите текст
+    </div>
+    
+    <script>
+        const textDiv = document.getElementById('text');
+        const getTextBtn = document.getElementById('getTextBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const highlightBtn = document.getElementById('highlightBtn');
+        const infoDiv = document.getElementById('info');
+        
+        // Получить выделенный текст
+        function getSelectedText() {
+            const selection = window.getSelection();
+            const selectedText = selection.toString();
+            
+            if (selectedText) {
+                infoDiv.innerHTML = `📌 Выделено: "${selectedText}"<br>Длина: ${selectedText.length} символов`;
+            } else {
+                infoDiv.innerHTML = '📌 Ничего не выделено';
+            }
+            
+            return selectedText;
+        }
+        
+        // Очистить выделение
+        function clearSelection() {
+            window.getSelection().removeAllRanges();
+            infoDiv.innerHTML = '🗑️ Выделение очищено';
+        }
+        
+        // Выделить весь текст
+        function selectAll() {
+            const range = document.createRange();
+            range.selectNodeContents(textDiv);
+            
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            
+            infoDiv.innerHTML = '✅ Весь текст выделен';
+        }
+        
+        // Подсветить выделение
+        function highlightSelection() {
+            const selection = window.getSelection();
+            
+            if (selection.rangeCount > 0 && !selection.isCollapsed) {
+                const range = selection.getRangeAt(0);
+                const span = document.createElement('span');
+                span.className = 'highlight';
+                range.surroundContents(span);
+                
+                infoDiv.innerHTML = '🎨 Выделение подсвечено';
+                selection.removeAllRanges();
+            } else {
+                infoDiv.innerHTML = '⚠️ Сначала выделите текст';
+            }
+        }
+        
+        getTextBtn.onclick = getSelectedText;
+        clearBtn.onclick = clearSelection;
+        selectAllBtn.onclick = selectAll;
+        highlightBtn.onclick = highlightSelection;
+        
+        // Слушаем изменения выделения
+        document.addEventListener('selectionchange', () => {
+            const selection = window.getSelection();
+            if (selection.toString()) {
+                infoDiv.innerHTML = `🔍 Выделено: "${selection.toString().substring(0, 50)}"`;
+            }
+        });
+    </script>
+</body>
+</html>

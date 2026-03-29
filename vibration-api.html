@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vibration API Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        button {
+            padding: 15px 25px;
+            margin: 10px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .status {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 12px;
+            background: #f0f0f0;
+            font-family: monospace;
+        }
+        
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .warning {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        
+        .pattern-btn {
+            background: #34C759;
+        }
+    </style>
+</head>
+<body>
+    <h1>📳 Vibration API</h1>
+    
+    <div id="status" class="status">⏳ Проверка поддержки...</div>
+    
+    <div>
+        <button id="singleBtn">📳 Одиночная вибрация</button>
+        <button id="patternBtn" class="pattern-btn">🎵 Паттерн (короткие)</button>
+        <button id="longBtn" class="pattern-btn">📳 Длинная (2 сек)</button>
+        <button id="stopBtn">⏹ Остановить</button>
+    </div>
+    
+    <div id="info" class="status"></div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const infoDiv = document.getElementById('info');
+        const singleBtn = document.getElementById('singleBtn');
+        const patternBtn = document.getElementById('patternBtn');
+        const longBtn = document.getElementById('longBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        
+        // Проверка поддержки
+        if ('vibrate' in navigator) {
+            statusDiv.innerHTML = '✅ Vibration API поддерживается';
+            statusDiv.className = 'status success';
+        } else {
+            statusDiv.innerHTML = '❌ Vibration API не поддерживается. Работает только на мобильных устройствах с вибромотором';
+            statusDiv.className = 'status error';
+            singleBtn.disabled = true;
+            patternBtn.disabled = true;
+            longBtn.disabled = true;
+            stopBtn.disabled = true;
+        }
+        
+        // Одиночная вибрация (100 мс)
+        singleBtn.onclick = () => {
+            navigator.vibrate(100);
+            infoDiv.innerHTML = '📳 Вибрация 100мс';
+            infoDiv.className = 'status success';
+            setTimeout(() => {
+                infoDiv.innerHTML = '';
+            }, 1000);
+        };
+        
+        // Паттерн: вибрация-пауза-вибрация-пауза...
+        patternBtn.onclick = () => {
+            navigator.vibrate([100, 50, 100, 50, 100, 50, 200]);
+            infoDiv.innerHTML = '🎵 Вибрация паттерном';
+            infoDiv.className = 'status success';
+            setTimeout(() => {
+                infoDiv.innerHTML = '';
+            }, 2000);
+        };
+        
+        // Длинная вибрация (2000 мс)
+        longBtn.onclick = () => {
+            navigator.vibrate(2000);
+            infoDiv.innerHTML = '📳 Длинная вибрация 2 сек';
+            infoDiv.className = 'status success';
+            setTimeout(() => {
+                infoDiv.innerHTML = '';
+            }, 2500);
+        };
+        
+        // Остановка вибрации
+        stopBtn.onclick = () => {
+            navigator.vibrate(0);
+            infoDiv.innerHTML = '⏹ Вибрация остановлена';
+            infoDiv.className = 'status warning';
+            setTimeout(() => {
+                infoDiv.innerHTML = '';
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

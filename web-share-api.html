@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web Share API Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        .card {
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 12px 24px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            background: #f0f0f0;
+            font-family: monospace;
+        }
+        
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <h1>📤 Web Share API</h1>
+    
+    <div id="status" class="status">⏳ Проверка поддержки...</div>
+    
+    <div class="card">
+        <h3>📝 Поделиться текстом и ссылкой</h3>
+        <input type="text" id="shareTitle" placeholder="Заголовок" value="Полезная статья">
+        <input type="text" id="shareText" placeholder="Текст" value="Посмотрите эту замечательную статью!">
+        <input type="text" id="shareUrl" placeholder="URL" value="https://example.com">
+        <button id="shareTextBtn">📤 Поделиться</button>
+    </div>
+    
+    <div class="card">
+        <h3>🖼️ Поделиться файлом</h3>
+        <input type="file" id="fileInput">
+        <button id="shareFileBtn" disabled>📤 Поделиться файлом</button>
+    </div>
+    
+    <div class="card">
+        <h3>🔍 Проверка возможности</h3>
+        <button id="checkBtn">🔍 Проверить, можно ли поделиться</button>
+    </div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const shareTextBtn = document.getElementById('shareTextBtn');
+        const shareFileBtn = document.getElementById('shareFileBtn');
+        const checkBtn = document.getElementById('checkBtn');
+        const fileInput = document.getElementById('fileInput');
+        const shareTitle = document.getElementById('shareTitle');
+        const shareText = document.getElementById('shareText');
+        const shareUrl = document.getElementById('shareUrl');
+        
+        // Проверка поддержки
+        if (!navigator.share) {
+            statusDiv.innerHTML = '❌ Web Share API не поддерживается. Используйте HTTPS и современный браузер (Android Chrome, Safari)';
+            statusDiv.className = 'status error';
+            shareTextBtn.disabled = true;
+            shareFileBtn.disabled = true;
+        } else {
+            statusDiv.innerHTML = '✅ Web Share API поддерживается!';
+            statusDiv.className = 'status success';
+        }
+        
+        // Поделиться текстом и ссылкой
+        shareTextBtn.onclick = async () => {
+            const title = shareTitle.value;
+            const text = shareText.value;
+            const url = shareUrl.value;
+            
+            try {
+                await navigator.share({
+                    title: title,
+                    text: text,
+                    url: url
+                });
+                statusDiv.innerHTML = '✅ Поделились успешно!';
+                statusDiv.className = 'status success';
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    statusDiv.innerHTML = `❌ Ошибка: ${err.message}`;
+                    statusDiv.className = 'status error';
+                } else {
+                    statusDiv.innerHTML = '⚠️ Пользователь отменил';
+                    statusDiv.className = 'status';
+                }
+            }
+        };
+        
+        // Поделиться файлом
+        fileInput.onchange = () => {
+            shareFileBtn.disabled = !fileInput.files.length;
+        };
+        
+        shareFileBtn.onclick = async () => {
+            if (!fileInput.files.length) return;
+            
+            const file = fileInput.files[0];
+            const files = [file];
+            
+            try {
+                await navigator.share({
+                    title: 'Файл',
+                    text: 'Посмотрите этот файл',
+                    files: files
+                });
+                statusDiv.innerHTML = '✅ Файл отправлен!';
+                statusDiv.className = 'status success';
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    statusDiv.innerHTML = `❌ Ошибка: ${err.message}`;
+                    statusDiv.className = 'status error';
+                } else {
+                    statusDiv.innerHTML = '⚠️ Пользователь отменил';
+                    statusDiv.className = 'status';
+                }
+            }
+        };
+        
+        // Проверка возможности поделиться
+        checkBtn.onclick = () => {
+            const canShareText = navigator.canShare({
+                title: 'Тест',
+                text: 'Текст',
+                url: 'https://example.com'
+            });
+            
+            const canShareFile = fileInput.files.length && navigator.canShare({
+                files: [fileInput.files[0]]
+            });
+            
+            statusDiv.innerHTML = `
+                📱 Можно поделиться текстом/ссылкой: ${canShareText ? '✅ Да' : '❌ Нет'}<br>
+                📁 Можно поделиться файлом: ${canShareFile ? '✅ Да' : '❌ Нет'}
+            `;
+        };
+    </script>
+</body>
+</html>

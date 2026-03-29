@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Screen Orientation Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+            transition: background 0.3s;
+        }
+        
+        .orientation-box {
+            background: #f0f0f0;
+            padding: 40px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-size: 24px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+        
+        .info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>📱 Screen Orientation API</h1>
+    
+    <div class="orientation-box" id="orientationBox">
+        <div id="type">—</div>
+        <div id="angle">0°</div>
+    </div>
+    
+    <div>
+        <button id="lockPortraitBtn">🔒 Заблокировать портретную</button>
+        <button id="lockLandscapeBtn">🔒 Заблокировать альбомную</button>
+        <button id="unlockBtn">🔓 Разблокировать</button>
+    </div>
+    
+    <div class="info" id="info"></div>
+    
+    <script>
+        const typeSpan = document.getElementById('type');
+        const angleSpan = document.getElementById('angle');
+        const infoDiv = document.getElementById('info');
+        const lockPortraitBtn = document.getElementById('lockPortraitBtn');
+        const lockLandscapeBtn = document.getElementById('lockLandscapeBtn');
+        const unlockBtn = document.getElementById('unlockBtn');
+        
+        function updateOrientation() {
+            const orientation = screen.orientation;
+            if (orientation) {
+                typeSpan.textContent = orientation.type;
+                angleSpan.textContent = orientation.angle + '°';
+                infoDiv.innerHTML = `Тип: ${orientation.type}<br>Угол: ${orientation.angle}°`;
+            }
+        }
+        
+        // Проверка поддержки
+        if ('orientation' in screen) {
+            updateOrientation();
+            
+            // Слушаем изменения
+            screen.orientation.addEventListener('change', updateOrientation);
+            
+            // Блокировка портретной
+            lockPortraitBtn.onclick = async () => {
+                try {
+                    await screen.orientation.lock('portrait');
+                    infoDiv.innerHTML += '<br>✅ Заблокирована портретная ориентация';
+                } catch (err) {
+                    infoDiv.innerHTML += `<br>❌ ${err.message}`;
+                }
+            };
+            
+            // Блокировка альбомной
+            lockLandscapeBtn.onclick = async () => {
+                try {
+                    await screen.orientation.lock('landscape');
+                    infoDiv.innerHTML += '<br>✅ Заблокирована альбомная ориентация';
+                } catch (err) {
+                    infoDiv.innerHTML += `<br>❌ ${err.message}`;
+                }
+            };
+            
+            // Разблокировка
+            unlockBtn.onclick = () => {
+                screen.orientation.unlock();
+                infoDiv.innerHTML += '<br>🔓 Ориентация разблокирована';
+            };
+            
+        } else {
+            infoDiv.innerHTML = '❌ Screen Orientation API не поддерживается';
+            lockPortraitBtn.disabled = true;
+            lockLandscapeBtn.disabled = true;
+            unlockBtn.disabled = true;
+        }
+    </script>
+</body>
+</html>

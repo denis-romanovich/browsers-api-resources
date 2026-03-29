@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User-Agent Client Hints Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        .card {
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+        
+        .result {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin-top: 10px;
+            white-space: pre-wrap;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            background: #f0f0f0;
+        }
+        
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .info {
+            background: #e3f2fd;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <h1>🖥️ User-Agent Client Hints</h1>
+    
+    <div id="status" class="status info">⏳ Проверка поддержки...</div>
+    
+    <div class="card">
+        <h3>📋 Низкоэнтропийные данные (доступны всегда)</h3>
+        <button id="lowEntropyBtn">🔍 Получить базовую информацию</button>
+        <div id="lowEntropyResult" class="result"></div>
+    </div>
+    
+    <div class="card">
+        <h3>🔐 Высокоэнтропийные данные (требуют разрешения)</h3>
+        <button id="highEntropyBtn">🔐 Получить детальную информацию</button>
+        <div id="highEntropyResult" class="result"></div>
+    </div>
+    
+    <div class="card">
+        <h3>🆚 Сравнение с традиционной User-Agent</h3>
+        <button id="compareBtn">📊 Показать сравнение</button>
+        <div id="compareResult" class="result"></div>
+    </div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const lowEntropyResult = document.getElementById('lowEntropyResult');
+        const highEntropyResult = document.getElementById('highEntropyResult');
+        const compareResult = document.getElementById('compareResult');
+        const lowEntropyBtn = document.getElementById('lowEntropyBtn');
+        const highEntropyBtn = document.getElementById('highEntropyBtn');
+        const compareBtn = document.getElementById('compareBtn');
+        
+        // Проверка поддержки API
+        if (!navigator.userAgentData) {
+            statusDiv.innerHTML = '❌ User-Agent Client Hints API не поддерживается. Используйте Chrome 90+';
+            statusDiv.className = 'status error';
+            lowEntropyBtn.disabled = true;
+            highEntropyBtn.disabled = true;
+        } else {
+            statusDiv.innerHTML = '✅ API поддерживается!';
+            statusDiv.className = 'status success';
+        }
+        
+        // 1. Низкоэнтропийные данные (доступны всегда)
+        lowEntropyBtn.onclick = () => {
+            const uaData = navigator.userAgentData;
+            
+            const brands = uaData.brands.map(b => `${b.brand} v${b.version}`).join(', ');
+            
+            lowEntropyResult.innerHTML = `
+                <strong>📱 Базовые данные (доступны всегда):</strong><br><br>
+                🔹 brands: ${brands}<br>
+                🔹 mobile: ${uaData.mobile ? '📱 Мобильное устройство' : '💻 Десктоп'}<br>
+                🔹 platform: ${uaData.platform}
+            `;
+        };
+        
+        // 2. Высокоэнтропийные данные (требуют запроса)
+        highEntropyBtn.onclick = async () => {
+            highEntropyResult.innerHTML = '⏳ Запрос детальной информации...';
+            
+            try {
+                // Запрашиваем высокоэнтропийные данные[citation:1][citation:2]
+                const highEntropy = await navigator.userAgentData.getHighEntropyValues([
+                    'architecture',      // архитектура процессора (x86, arm64)
+                    'model',             // модель устройства
+                    'platformVersion',   // версия ОС
+                    'uaFullVersion',     // полная версия браузера
+                    'bitness'            // разрядность (32/64)
+                ]);
+                
+                highEntropyResult.innerHTML = `
+                    <strong>🔐 Детальные данные (запрошены специально):</strong><br><br>
+                    🔹 Архитектура: ${highEntropy.architecture || '—'}<br>
+                    🔹 Модель устройства: ${highEntropy.model || '—'}<br>
+                    🔹 Версия платформы: ${highEntropy.platformVersion || '—'}<br>
+                    🔹 Полная версия браузера: ${highEntropy.uaFullVersion || '—'}<br>
+                    🔹 Разрядность: ${highEntropy.bitness || '—'}
+                `;
+            } catch (err) {
+                highEntropyResult.innerHTML = `❌ Ошибка: ${err.message}`;
+            }
+        };
+        
+        // 3. Сравнение с традиционным User-Agent
+        compareBtn.onclick = () => {
+            const traditionalUA = navigator.userAgent;
+            const uaData = navigator.userAgentData;
+            
+            const brands = uaData.brands.map(b => `${b.brand} v${b.version}`).join(', ');
+            
+            compareResult.innerHTML = `
+                <strong>🆚 Сравнение подходов:</strong><br><br>
+                
+                <strong>📜 Традиционная User-Agent строка:</strong><br>
+                <code style="font-size: 11px; word-break: break-all;">${traditionalUA}</code><br><br>
+                
+                <strong>✅ User-Agent Client Hints (структурированные данные):</strong><br>
+                🔹 brands: ${brands}<br>
+                🔹 mobile: ${uaData.mobile}<br>
+                🔹 platform: ${uaData.platform}<br><br>
+                
+                <strong>💡 Преимущества UA-CH:</strong><br>
+                • Структурированные данные — не нужен парсинг<br>
+                • Контроль приватности — данные только по запросу<br>
+                • Меньше избыточной информации
+            `;
+        };
+        
+        // Автоматический показ базовой информации при загрузке
+        if (navigator.userAgentData) {
+            lowEntropyBtn.click();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Resize Observer Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        .box {
+            width: 200px;
+            height: 100px;
+            background: #007AFF;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            transition: all 0.3s;
+            margin: 20px 0;
+        }
+        
+        .info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+        
+        input {
+            width: 60px;
+            padding: 8px;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>📐 Resize Observer API</h1>
+    
+    <div class="box" id="box">
+        📦 Изменяй размер
+    </div>
+    
+    <div>
+        <button id="increaseWidth">➡️ Ширина +50px</button>
+        <button id="increaseHeight">⬇️ Высота +30px</button>
+        <button id="resetBtn">🔄 Сброс</button>
+    </div>
+    
+    <div class="info" id="info">
+        <strong>Размеры:</strong><br>
+        Ширина: <span id="width">200</span>px<br>
+        Высота: <span id="height">100</span>px
+    </div>
+    
+    <script>
+        const box = document.getElementById('box');
+        const widthSpan = document.getElementById('width');
+        const heightSpan = document.getElementById('height');
+        const increaseWidth = document.getElementById('increaseWidth');
+        const increaseHeight = document.getElementById('increaseHeight');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        let w = 200, h = 100;
+        
+        // Resize Observer
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const width = entry.contentRect.width;
+                const height = entry.contentRect.height;
+                widthSpan.textContent = Math.round(width);
+                heightSpan.textContent = Math.round(height);
+                console.log(`Размер изменился: ${width}x${height}`);
+            }
+        });
+        
+        observer.observe(box);
+        
+        // Управление размером
+        increaseWidth.onclick = () => {
+            w += 50;
+            box.style.width = w + 'px';
+        };
+        
+        increaseHeight.onclick = () => {
+            h += 30;
+            box.style.height = h + 'px';
+        };
+        
+        resetBtn.onclick = () => {
+            w = 200;
+            h = 100;
+            box.style.width = w + 'px';
+            box.style.height = h + 'px';
+        };
+    </script>
+</body>
+</html>

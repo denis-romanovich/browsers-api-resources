@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Text Fragment Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        .card {
+            background: #f0f0f0;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+        
+        .highlight {
+            background-color: #ffeb3b;
+            transition: background-color 0.5s;
+        }
+        
+        code {
+            background: #e0e0e0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <h1>📌 Text Fragment Directives</h1>
+    
+    <div class="card">
+        <h3>📖 Демо-текст</h3>
+        <div id="text" style="line-height: 1.8;">
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+            <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
+            <p>Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3>🔗 Создать ссылку на текст</h3>
+        <input type="text" id="searchText" placeholder="Введите текст для ссылки" value="consectetur adipiscing">
+        <button id="generateBtn">📎 Сгенерировать ссылку</button>
+        <div id="generatedLink" class="status"></div>
+    </div>
+    
+    <div class="card">
+        <h3>📋 Примеры ссылок</h3>
+        <button id="example1">🔗 "Lorem ipsum"</button>
+        <button id="example2">🔗 "ut labore et dolore"</button>
+        <button id="example3">🔗 Диапазон "minim veniam" → "aliquip ex"</button>
+    </div>
+    
+    <div id="info" class="status"></div>
+    
+    <script>
+        const textDiv = document.getElementById('text');
+        const searchInput = document.getElementById('searchText');
+        const generateBtn = document.getElementById('generateBtn');
+        const generatedLink = document.getElementById('generatedLink');
+        const infoDiv = document.getElementById('info');
+        
+        // Проверка поддержки
+        if (!document.querySelector(':target')) {
+            infoDiv.innerHTML = 'ℹ️ Text Fragment Directives поддерживаются в Chrome 80+';
+        }
+        
+        // Генерация ссылки с текстовым фрагментом
+        generateBtn.onclick = () => {
+            const searchText = searchInput.value.trim();
+            if (!searchText) return;
+            
+            const url = new URL(window.location.href);
+            url.hash = `:~:text=${encodeURIComponent(searchText)}`;
+            
+            generatedLink.innerHTML = `
+                <strong>🔗 Ваша ссылка:</strong><br>
+                <code>${url.href}</code><br><br>
+                <button onclick="copyToClipboard('${url.href}')">📋 Копировать</button>
+                <button onclick="window.location.href='${url.href}'">🔍 Перейти</button>
+            `;
+        };
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            infoDiv.innerHTML = '✅ Ссылка скопирована!';
+            setTimeout(() => {
+                infoDiv.innerHTML = '';
+            }, 2000);
+        }
+        
+        // Примеры
+        example1.onclick = () => {
+            window.location.hash = ':~:text=Lorem ipsum';
+        };
+        
+        example2.onclick = () => {
+            window.location.hash = ':~:text=ut labore et dolore';
+        };
+        
+        example3.onclick = () => {
+            window.location.hash = ':~:text=minim veniam,aliquip ex';
+        };
+        
+        // Подсветка при загрузке с фрагментом
+        if (window.location.hash.includes(':~:text=')) {
+            infoDiv.innerHTML = '✅ Текст найден и подсвечен!';
+            setTimeout(() => {
+                infoDiv.innerHTML = '';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

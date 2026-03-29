@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Summarizer API Demo</title>
+    <style>
+        body {
+            font-family: system-ui;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f7;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 12px;
+            font-family: monospace;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            box-sizing: border-box;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px 5px 0 0;
+            border-radius: 8px;
+            border: none;
+            background: #007AFF;
+            color: white;
+            cursor: pointer;
+        }
+        
+        button:disabled {
+            background: #ccc;
+        }
+        
+        .result {
+            background: #f0f0f0;
+            padding: 16px;
+            border-radius: 12px;
+            margin-top: 16px;
+            white-space: pre-wrap;
+        }
+        
+        .status {
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .status.success { background: #e8f5e9; color: #2e7d32; }
+        .status.error { background: #ffebee; color: #c62828; }
+        .status.warning { background: #fff3e0; color: #e65100; }
+        .status.info { background: #e3f2fd; color: #0c5460; }
+        
+        .options {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        select {
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>📝 Summarizer API</h1>
+    
+    <div id="status" class="status info">⏳ Проверка поддержки...</div>
+    
+    <div class="card">
+        <h3>📄 Текст для суммаризации</h3>
+        <textarea id="inputText">
+Artificial intelligence (AI) is intelligence demonstrated by machines. The field of AI research was founded at a workshop at Dartmouth College in 1956. Advances in the 21st century have led to the widespread adoption of AI technologies. Machine learning, particularly deep learning, has driven many recent advances in AI. AI is now used in virtual assistants, self-driving cars, recommendation systems, facial recognition, and medical imaging.
+        </textarea>
+    </div>
+    
+    <div class="card">
+        <h3>⚙️ Настройки</h3>
+        <div class="options">
+            <label>Тип:</label>
+            <select id="typeSelect">
+                <option value="key-points">Ключевые моменты</option>
+                <option value="tl-dr">Кратко (TL;DR)</option>
+                <option value="teaser">Тизер</option>
+                <option value="headline">Заголовок</option>
+            </select>
+            
+            <label>Длина:</label>
+            <select id="lengthSelect">
+                <option value="short">Коротко</option>
+                <option value="medium" selected>Средне</option>
+                <option value="long">Подробно</option>
+            </select>
+            
+            <label>Формат:</label>
+            <select id="formatSelect">
+                <option value="plain-text">Текст</option>
+                <option value="markdown">Markdown</option>
+            </select>
+        </div>
+        
+        <button id="summarizeBtn">✨ Создать краткое содержание</button>
+        <button id="clearBtn">🗑️ Очистить</button>
+        
+        <h3>📋 Результат</h3>
+        <div id="result" class="result"></div>
+    </div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const inputText = document.getElementById('inputText');
+        const summarizeBtn = document.getElementById('summarizeBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const resultDiv = document.getElementById('result');
+        const typeSelect = document.getElementById('typeSelect');
+        const lengthSelect = document.getElementById('lengthSelect');
+        const formatSelect = document.getElementById('formatSelect');
+        
+        let summarizer = null;
+        
+        function logStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        // Проверка поддержки API
+        async function checkSupport() {
+            if (!('Summarizer' in window)) {
+                logStatus('❌ Summarizer API не поддерживается. Нужен Chrome 127+ с флагами', 'error');
+                summarizeBtn.disabled = true;
+                return false;
+            }
+            
+            logStatus('🔍 Проверка доступности модели...', 'info');
+            
+            try {
+                // ✅ ПРАВИЛЬНЫЙ МЕТОД: availability(), НЕ capabilities()
+                const availability = await Summarizer.availability();
+                logStatus(`📊 Статус: ${availability}`, 'info');
+                
+                if (availability === 'unavailable') {
+                    logStatus('❌ Модель недоступна. Проверьте chrome://flags и chrome://components', 'error');
+                    summarizeBtn.disabled = true;
+                    return false;
+                }
+                
+                if (availability === 'downloadable') {
+                    logStatus('⏳ Модель нужно скачать. Начнём загрузку...', 'warning');
+                }
+                
+                summarizeBtn.disabled = false;
+                return true;
+                
+            } catch (err) {
+                logStatus(`❌ Ошибка: ${err.message}`, 'error');
+                summarizeBtn.disabled = true;
+                return false;
+            }
+        }
+        
+        // Создание суммаризатора
+        async function createSummarizer() {
+            const options = {
+                type: typeSelect.value,
+                length: lengthSelect.value,
+                format: formatSelect.value,
+                sharedContext: 'This is a general text for summarization'
+            };
+            
+            logStatus(`🔄 Создание суммаризатора...`, 'info');
+            
+            try {
+                // Проверяем доступность перед созданием
+                const availability = await Summarizer.availability();
+                
+                if (availability === 'downloadable') {
+                    // Показываем прогресс загрузки
+                    summarizer = await Summarizer.create({
+                        ...options,
+                        monitor(m) {
+                            m.addEventListener('downloadprogress', (e) => {
+                                const percent = Math.round((e.loaded / e.total) * 100);
+                                logStatus(`⏳ Загрузка модели: ${percent}%`, 'info');
+                            });
+                        }
+                    });
+                    await summarizer.ready;
+                    logStatus('✅ Модель загружена!', 'success');
+                } else {
+                    summarizer = await Summarizer.create(options);
+                }
+                
+                logStatus('✅ Суммаризатор готов', 'success');
+                return true;
+                
+            } catch (err) {
+                logStatus(`❌ Ошибка создания: ${err.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // Суммаризация
+        async function summarize() {
+            const text = inputText.value.trim();
+            if (!text) {
+                resultDiv.innerHTML = '⚠️ Введите текст';
+                return;
+            }
+            
+            resultDiv.innerHTML = '⏳ Генерация...';
+            summarizeBtn.disabled = true;
+            
+            try {
+                if (!summarizer) {
+                    const created = await createSummarizer();
+                    if (!created) {
+                        resultDiv.innerHTML = '❌ Не удалось создать суммаризатор';
+                        summarizeBtn.disabled = false;
+                        return;
+                    }
+                }
+                
+                const summary = await summarizer.summarize(text);
+                resultDiv.innerHTML = summary;
+                logStatus('✅ Готово!', 'success');
+                
+            } catch (err) {
+                resultDiv.innerHTML = `❌ Ошибка: ${err.message}`;
+                logStatus(`❌ ${err.message}`, 'error');
+                summarizer = null;
+            } finally {
+                summarizeBtn.disabled = false;
+            }
+        }
+        
+        function clearResult() {
+            resultDiv.innerHTML = '';
+            logStatus('Результат очищен', 'info');
+        }
+        
+        // При изменении настроек — пересоздаём суммаризатор
+        function onSettingsChange() {
+            summarizer = null;
+            logStatus('Настройки изменены, суммаризатор будет пересоздан', 'info');
+        }
+        
+        summarizeBtn.onclick = summarize;
+        clearBtn.onclick = clearResult;
+        typeSelect.onchange = onSettingsChange;
+        lengthSelect.onchange = onSettingsChange;
+        formatSelect.onchange = onSettingsChange;
+        
+        // Инициализация
+        checkSupport();
+    </script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trusted Types - блокировка XSS</title>
+    <meta http-equiv="Content-Security-Policy" content="require-trusted-types-for 'script'; trusted-types my-policy">
+</head>
+<body>
+    <h1>🔒 Trusted Types</h1>
+    
+    <input type="text" id="input" value='&lt;script&gt;alert("XSS")&lt;/script&gt;' style="width: 300px;">
+    
+    <button onclick="dangerous()">⚠️ Без защиты (заблокировано)</button>
+    <button onclick="safe()">✅ С защитой</button>
+    
+    <div id="output" style="margin-top: 20px; padding: 10px; background: #f0f0f0;"></div>
+    
+    <script>
+        const output = document.getElementById('output');
+        const input = document.getElementById('input');
+        
+        // Создаём политику безопасности
+        const policy = trustedTypes.createPolicy('my-policy', {
+            createHTML: (html) => {
+                // Удаляем теги script
+                let safe = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+                // Экранируем остальное
+                safe = safe.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return safe;
+            }
+        });
+        
+        // Попытка без защиты — будет заблокирована Trusted Types
+        function dangerous() {
+            try {
+                output.innerHTML = input.value;
+            } catch (e) {
+                alert('❌ Trusted Types заблокировал: ' + e.message);
+            }
+        }
+        
+        // С защитой — безопасно
+        function safe() {
+            const safeHTML = policy.createHTML(input.value);
+            output.innerHTML = safeHTML;
+        }
+    </script>
+</body>
+</html>

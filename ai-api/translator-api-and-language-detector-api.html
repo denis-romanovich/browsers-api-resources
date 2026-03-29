@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Translator API Demo</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f7;
+        }
+        
+        h1 {
+            color: #1c1c1e;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        
+        select, button {
+            padding: 10px 16px;
+            margin: 5px 5px 0 0;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            background: #f0f0f0;
+            padding: 16px;
+            border-radius: 12px;
+            margin-top: 16px;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .status {
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+        
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        
+        .status.warning {
+            background: #fff3e0;
+            color: #e65100;
+            border: 1px solid #ffcc80;
+        }
+        
+        .status.info {
+            background: #e3f2fd;
+            color: #0c5460;
+            border: 1px solid #90caf9;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: #007AFF;
+            transition: width 0.3s;
+        }
+        
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 15px 0;
+            align-items: center;
+        }
+        
+        label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .swap-btn {
+            background: #6c757d;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        
+        .lang-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 8px;
+            background: #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌐 Translator API</h1>
+    <div class="subtitle">Встроенный AI для перевода текста (Gemini Nano)</div>
+    
+    <div id="status" class="status info">⏳ Проверка поддержки Translator API...</div>
+    
+    <div class="card">
+        <h3>📝 Исходный текст</h3>
+        <textarea id="sourceText" placeholder="Введите текст для перевода...">Hello, how are you today? This is a test of the Translator API.</textarea>
+    </div>
+    
+    <div class="card">
+        <h3>⚙️ Настройки перевода</h3>
+        <div class="options">
+            <label>С какого языка:</label>
+            <select id="sourceLang">
+                <option value="">Автоопределение</option>
+                <option value="en" selected>🇬🇧 Английский (en)</option>
+                <option value="ru">🇷🇺 Русский (ru)</option>
+                <option value="fr">🇫🇷 Французский (fr)</option>
+                <option value="de">🇩🇪 Немецкий (de)</option>
+                <option value="es">🇪🇸 Испанский (es)</option>
+                <option value="zh">🇨🇳 Китайский (zh)</option>
+                <option value="ja">🇯🇵 Японский (ja)</option>
+                <option value="ko">🇰🇷 Корейский (ko)</option>
+                <option value="it">🇮🇹 Итальянский (it)</option>
+                <option value="pt">🇵🇹 Португальский (pt)</option>
+            </select>
+            
+            <button id="swapBtn" class="swap-btn">🔄 Поменять</button>
+            
+            <label>На какой язык:</label>
+            <select id="targetLang">
+                <option value="ru">🇷🇺 Русский (ru)</option>
+                <option value="en" selected>🇬🇧 Английский (en)</option>
+                <option value="fr">🇫🇷 Французский (fr)</option>
+                <option value="de">🇩🇪 Немецкий (de)</option>
+                <option value="es">🇪🇸 Испанский (es)</option>
+                <option value="zh">🇨🇳 Китайский (zh)</option>
+                <option value="ja">🇯🇵 Японский (ja)</option>
+                <option value="ko">🇰🇷 Корейский (ko)</option>
+                <option value="it">🇮🇹 Итальянский (it)</option>
+                <option value="pt">🇵🇹 Португальский (pt)</option>
+            </select>
+        </div>
+        
+        <div id="progressContainer" style="display: none;">
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <div id="progressText" style="font-size: 12px; color: #666;"></div>
+        </div>
+        
+        <button id="translateBtn">🌐 Перевести</button>
+        <button id="clearBtn">🗑️ Очистить</button>
+        
+        <h3>📋 Перевод</h3>
+        <div id="result" class="result"></div>
+    </div>
+    
+    <script>
+        const statusDiv = document.getElementById('status');
+        const sourceText = document.getElementById('sourceText');
+        const sourceLang = document.getElementById('sourceLang');
+        const targetLang = document.getElementById('targetLang');
+        const translateBtn = document.getElementById('translateBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const swapBtn = document.getElementById('swapBtn');
+        const resultDiv = document.getElementById('result');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        
+        let translatorInstance = null;
+        
+        function logStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        function updateProgress(loaded, total) {
+            const percent = Math.round((loaded / total) * 100);
+            progressFill.style.width = `${percent}%`;
+            progressText.textContent = `Загрузка модели: ${percent}%`;
+            if (percent === 100) {
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 1000);
+            }
+        }
+        
+        // Проверка поддержки API
+        async function checkSupport() {
+            if (!('Translator' in window)) {
+                logStatus('❌ Translator API не поддерживается. Нужен Chrome 130+ с флагами', 'error');
+                translateBtn.disabled = true;
+                return false;
+            }
+            
+            logStatus('🔍 Проверка доступности модели...', 'info');
+            
+            try {
+                const srcLang = sourceLang.value || undefined;
+                const tgtLang = targetLang.value;
+                
+                if (!tgtLang) {
+                    logStatus('⚠️ Выберите целевой язык', 'warning');
+                    translateBtn.disabled = true;
+                    return false;
+                }
+                
+                const availability = await Translator.availability({
+                    sourceLanguage: srcLang,
+                    targetLanguage: tgtLang
+                });
+                
+                logStatus(`📊 Статус модели для пары ${srcLang || 'auto'} → ${tgtLang}: ${availability}`, 'info');
+                
+                if (availability === 'unavailable') {
+                    logStatus('❌ Модель недоступна. Проверьте chrome://flags и chrome://components', 'error');
+                    translateBtn.disabled = true;
+                    return false;
+                }
+                
+                if (availability === 'downloadable') {
+                    logStatus('⏳ Модель нужно скачать. Начнём загрузку...', 'warning');
+                }
+                
+                translateBtn.disabled = false;
+                return true;
+                
+            } catch (err) {
+                logStatus(`❌ Ошибка проверки: ${err.message}`, 'error');
+                translateBtn.disabled = true;
+                return false;
+            }
+        }
+        
+        // Создание переводчика
+        async function createTranslator() {
+            const srcLang = sourceLang.value || undefined;
+            const tgtLang = targetLang.value;
+            
+            if (!tgtLang) {
+                logStatus('⚠️ Выберите целевой язык', 'warning');
+                return null;
+            }
+            
+            logStatus(`🔄 Создание переводчика ${srcLang || 'auto'} → ${tgtLang}...`, 'info');
+            
+            try {
+                const availability = await Translator.availability({
+                    sourceLanguage: srcLang,
+                    targetLanguage: tgtLang
+                });
+                
+                if (availability === 'downloadable') {
+                    progressContainer.style.display = 'block';
+                    progressFill.style.width = '0%';
+                    progressText.textContent = 'Загрузка модели...';
+                    
+                    translatorInstance = await Translator.create({
+                        sourceLanguage: srcLang,
+                        targetLanguage: tgtLang,
+                        monitor(m) {
+                            m.addEventListener('downloadprogress', (e) => {
+                                updateProgress(e.loaded, e.total);
+                            });
+                        }
+                    });
+                    
+                    await translatorInstance.ready;
+                    progressContainer.style.display = 'none';
+                    
+                } else if (availability === 'available') {
+                    translatorInstance = await Translator.create({
+                        sourceLanguage: srcLang,
+                        targetLanguage: tgtLang
+                    });
+                } else {
+                    throw new Error(`Модель недоступна: ${availability}`);
+                }
+                
+                logStatus('✅ Переводчик готов', 'success');
+                return translatorInstance;
+                
+            } catch (err) {
+                logStatus(`❌ Ошибка создания: ${err.message}`, 'error');
+                return null;
+            }
+        }
+        
+        // Перевод текста
+        async function translate() {
+            const text = sourceText.value.trim();
+            if (!text) {
+                resultDiv.innerHTML = '⚠️ Введите текст для перевода';
+                return;
+            }
+            
+            const tgtLang = targetLang.value;
+            if (!tgtLang) {
+                resultDiv.innerHTML = '⚠️ Выберите целевой язык';
+                return;
+            }
+            
+            resultDiv.innerHTML = '⏳ Перевод...';
+            translateBtn.disabled = true;
+            
+            try {
+                const srcLang = sourceLang.value || undefined;
+                const currentTargetLang = targetLang.value;
+                
+                // Проверяем, нужно ли пересоздать переводчик
+                if (!translatorInstance || 
+                    translatorInstance.targetLanguage !== currentTargetLang ||
+                    translatorInstance.sourceLanguage !== srcLang) {
+                    translatorInstance = await createTranslator();
+                    if (!translatorInstance) {
+                        resultDiv.innerHTML = '❌ Не удалось создать переводчика';
+                        translateBtn.disabled = false;
+                        return;
+                    }
+                }
+                
+                const translated = await translatorInstance.translate(text);
+                resultDiv.innerHTML = translated;
+                logStatus('✅ Перевод выполнен!', 'success');
+                
+            } catch (err) {
+                resultDiv.innerHTML = `❌ Ошибка перевода: ${err.message}`;
+                logStatus(`❌ ${err.message}`, 'error');
+                translatorInstance = null;
+            } finally {
+                translateBtn.disabled = false;
+            }
+        }
+        
+        function clearResult() {
+            resultDiv.innerHTML = '';
+            logStatus('Результат очищен', 'info');
+        }
+        
+        function swapLanguages() {
+            const srcVal = sourceLang.value;
+            const tgtVal = targetLang.value;
+            
+            sourceLang.value = tgtVal;
+            targetLang.value = srcVal;
+            
+            translatorInstance = null;
+            logStatus('Языки поменяны местами, переводчик будет пересоздан', 'info');
+            
+            // Если есть текст, можно автоматически перевести
+            if (sourceText.value.trim()) {
+                setTimeout(() => translate(), 100);
+            }
+        }
+        
+        async function onSettingsChange() {
+            translatorInstance = null;
+            await checkSupport();
+        }
+        
+        translateBtn.onclick = translate;
+        clearBtn.onclick = clearResult;
+        swapBtn.onclick = swapLanguages;
+        sourceLang.onchange = onSettingsChange;
+        targetLang.onchange = onSettingsChange;
+        
+        // Инициализация
+        checkSupport();
+    </script>
+</body>
+</html>

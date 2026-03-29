@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CSP Reports</title>
+    <!-- CSP: запрещаем загрузку с других сайтов -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'">
+</head>
+<body>
+    <h1>📊 CSP Reports</h1>
+    
+    <button onclick="loadVideo()">🎬 Загрузить видео с YouTube</button>
+    
+    <div id="reports" style="margin-top: 20px; padding: 10px; background: #f0f0f0; border-radius: 8px; font-family: monospace;">
+        <strong>📋 Отчёты:</strong><br>
+        <div id="reportList">—</div>
+    </div>
+    
+    <script>
+        const reportList = document.getElementById('reportList');
+        let reports = [];
+        
+        // Слушаем нарушения CSP
+        const observer = new ReportingObserver((list) => {
+            list.forEach(report => {
+                reports.unshift({
+                    time: new Date().toLocaleTimeString(),
+                    url: report.body.blockedURL || 'YouTube'
+                });
+                reportList.innerHTML = reports.map(r => 
+                    `[${r.time}] 🚫 Заблокирован: ${r.url}<br>`
+                ).join('');
+            });
+        });
+        observer.observe();
+        
+        // Попытка загрузить видео с YouTube (нарушает CSP)
+        function loadVideo() {
+            const iframe = document.createElement('iframe');
+            iframe.src = 'https://www.youtube.com/embed/dQw4w9WgXcQ';
+            document.body.appendChild(iframe);
+        }
+    </script>
+</body>
+</html>
