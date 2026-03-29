@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Background Tasks API Demo</title>
+</head>
+<body>
+  <h1>📊 Анализ данных</h1>
+  <button id="startBtn">🚀 Запустить фоновую задачу</button>
+  <div id="status">Статус: Ожидание</div>
+  <div id="progress"></div>
+
+  <script>
+    // ===== Проверка поддержки =====
+    const supportsBackgroundTasks = 'requestIdleCallback' in window;
+    
+    if (!supportsBackgroundTasks) {
+      document.getElementById('status').textContent = '❌ API не поддерживается';
+    }
+
+    // ===== Фоновая задача =====
+    function heavyTask(deadline) {
+      let itemsProcessed = 0;
+      const data = Array.from({ length: 10000 }, (_, i) => i * 2);
+      const results = [];
+      
+      while (deadline.timeRemaining() > 0 && itemsProcessed < data.length) {
+        results.push(Math.sqrt(data[itemsProcessed]));
+        itemsProcessed++;
+      }
+      
+      document.getElementById('progress').textContent = 
+        `Обработано: ${itemsProcessed} / ${data.length}`;
+      
+      if (itemsProcessed < data.length) {
+        // Продолжить в следующем кадре простоя
+        requestIdleCallback(heavyTask);
+      } else {
+        document.getElementById('status').textContent = '✅ Задача завершена!';
+        console.log('Результатов:', results.length);
+      }
+    }
+
+    // ===== Запуск с таймаутом =====
+    document.getElementById('startBtn').addEventListener('click', () => {
+      document.getElementById('status').textContent = '⏳ Выполнение...';
+      
+      requestIdleCallback(heavyTask, { timeout: 2000 });
+      // timeout гарантирует выполнение даже если нет простоя
+    });
+
+    // ===== Отмена задачи =====
+    const handle = requestIdleCallback(myTask);
+    cancelIdleCallback(handle); // Отмена если нужно
+  </script>
+</body>
+</html>

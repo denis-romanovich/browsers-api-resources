@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Barcode Detection API Demo</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+    video, canvas { width: 100%; border-radius: 10px; }
+    .result { background: #f5f5f5; padding: 15px; border-radius: 5px; margin-top: 15px; }
+    .barcode { background: #e3f2fd; padding: 10px; margin: 5px 0; border-radius: 5px; }
+    button { background: #4285f4; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>📷 Сканер штрих-кодов</h1>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas" style="display: none;"></canvas>
+  <button id="startBtn">🎥 Запустить камеру</button>
+  <button id="scanBtn">🔍 Сканировать</button>
+  <div class="result" id="result"></div>
+
+  <script>
+    // ===== Проверка поддержки =====
+    if (!('BarcodeDetector' in window)) {
+      document.getElementById('result').innerHTML = '❌ API не поддерживается в этом браузере';
+    }
+
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const resultDiv = document.getElementById('result');
+
+    // ===== Поддерживаемые форматы =====
+    const supportedFormats = ['qr_code', 'ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'code_39'];
+
+    // ===== Запуск камеры =====
+    document.getElementById('startBtn').addEventListener('click', async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' } 
+        });
+        video.srcObject = stream;
+        resultDiv.innerHTML = '✅ Камера активна';
+      } catch (err) {
+        resultDiv.innerHTML = `❌ Ошибка камеры: ${err.message}`;
+      }
+    });
+
+    // ===== Сканирование =====
+    document.getElementById('scanBtn').addEventListener('click', async () => {
+      // Создаём детектор с нужными форматами
+      const barcodeDetector = new BarcodeDetector({ 
+        formats: supportedFormats 
+      });
+
+      try {
+        // Детекция в кадре видео
+        const barcodes = await barcodeDetector.detect(video);
+
+        if (barcodes.length === 0) {
+          resultDiv.innerHTML = '⚠️ Штрих-коды не найдены';
+          return;
+        }
+
+        // Отображение результатов
+        let html = '<h3>📋 Найдено:</h3>';
+        barcodes.forEach((barcode, index) => {
+          html += `
+            <div class="barcode">
+              <strong>Тип:</strong> ${barcode.format}<br>
+              <strong>Данные:</strong> ${barcode.rawValue}<br>
+              <strong>Позиция:</strong> ${barcode.boundingBox.width}x${barcode.boundingBox.height}
+            </div>
+          `;
+        });
+        resultDiv.innerHTML = html;
+
+      } catch (err) {
+        resultDiv.innerHTML = `❌ Ошибка сканирования: ${err.message}`;
+      }
+    });
+
+    // ===== Проверка поддерживаемых форматов =====
+    async function checkSupportedFormats() {
+      const formats = await BarcodeDetector.getSupportedFormats();
+      console.log('Поддерживаемые форматы:', formats);
+      return formats;
+    }
+  </script>
+</body>
+</html>
