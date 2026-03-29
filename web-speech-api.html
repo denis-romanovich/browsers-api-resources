@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Web Speech API Demo</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+    button { background: #4285f4; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; margin: 5px; }
+    button:disabled { background: #ccc; }
+    .output { background: #f5f5f5; padding: 15px; border-radius: 5px; margin-top: 15px; min-height: 100px; }
+  </style>
+</head>
+<body>
+  <h1>🎤 Web Speech API</h1>
+  
+  <h2>Распознавание речи</h2>
+  <button id="startRec">🎙️ Начать запись</button>
+  <button id="stopRec">⏹️ Стоп</button>
+  <div class="output" id="recOutput">Текст появится здесь...</div>
+  
+  <h2>Синтез речи</h2>
+  <textarea id="textToSpeak" placeholder="Введите текст..." rows="3" style="width:100%"></textarea>
+  <button id="speakBtn">🔊 Произнести</button>
+
+  <script>
+    // ===== Проверка поддержки =====
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechSynthesis = window.speechSynthesis;
+
+    // ===== Распознавание речи =====
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'ru-RU';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      const recOutput = document.getElementById('recOutput');
+
+      recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+          .map(result => result[0].transcript)
+          .join('');
+        recOutput.textContent = transcript;
+      };
+
+      recognition.onerror = (event) => {
+        recOutput.textContent = `❌ Ошибка: ${event.error}`;
+      };
+
+      document.getElementById('startRec').addEventListener('click', () => {
+        recognition.start();
+        recOutput.textContent = '🎙️ Слушаю...';
+      });
+
+      document.getElementById('stopRec').addEventListener('click', () => {
+        recognition.stop();
+      });
+    } else {
+      document.getElementById('recOutput').textContent = '❌ Распознавание не поддерживается';
+    }
+
+    // ===== Синтез речи =====
+    if (SpeechSynthesis) {
+      document.getElementById('speakBtn').addEventListener('click', () => {
+        const text = document.getElementById('textToSpeak').value;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ru-RU';
+        utterance.rate = 1;      // Скорость (0.1 - 10)
+        utterance.pitch = 1;     // Тон (0 - 2)
+        utterance.volume = 1;    // Громкость (0 - 1)
+        
+        speechSynthesis.speak(utterance);
+      });
+
+      // Список голосов
+      const voices = speechSynthesis.getVoices();
+      console.log('Доступные голоса:', voices);
+    } else {
+      document.getElementById('speakBtn').disabled = true;
+      document.getElementById('speakBtn').textContent = '❌ Синтез не поддерживается';
+    }
+  </script>
+</body>
+</html>
