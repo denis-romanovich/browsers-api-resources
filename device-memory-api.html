@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Memory API - Демо</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 32px;
+            max-width: 550px;
+            width: 100%;
+            padding: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            transition: transform 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-4px);
+        }
+        
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            -webkit-background-clip: text;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 28px;
+            padding-left: 12px;
+        }
+        
+        .memory-display {
+            background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f5 100%);
+            border-radius: 24px;
+            padding: 28px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .memory-gb {
+            font-size: 64px;
+            font-weight: 800;
+            color: #333;
+            line-height: 1;
+        }
+        
+        .memory-gb span {
+            font-size: 24px;
+            font-weight: 500;
+            color: #888;
+        }
+        
+        .memory-label {
+            color: #666;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+        
+        .memory-bar {
+            background: #e5e7eb;
+            border-radius: 20px;
+            height: 12px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .memory-fill {
+            height: 100%;
+            border-radius: 20px;
+            transition: width 0.5s ease;
+        }
+        
+        .memory-fill.low { background: #22c55e; width: 25%; }
+        .memory-fill.medium { background: #eab308; width: 50%; }
+        .memory-fill.high { background: #3b82f6; width: 75%; }
+        .memory-fill.max { background: #8b5cf6; width: 100%; }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .info-card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .info-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-top: 4px;
+        }
+        
+        .recommendation {
+            background: #fef9e3;
+            border-radius: 20px;
+            padding: 18px;
+            border-left: 4px solid #eab308;
+            margin-top: 16px;
+        }
+        
+        .recommendation-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .recommendation-text {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.5;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: #e9ecef;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-family: monospace;
+            margin-top: 16px;
+            color: #555;
+        }
+        
+        .note {
+            background: #f1f5f9;
+            border-radius: 16px;
+            padding: 14px;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #64748b;
+            text-align: center;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>💾 Device Memory API</h1>
+        <div class="subtitle">Определяем объём оперативной памяти устройства</div>
+        
+        <div class="memory-display">
+            <div class="memory-gb" id="memoryValue">
+                <span id="ramNumber">—</span> <span>ГБ</span>
+            </div>
+            <div class="memory-label">доступно для приложения</div>
+            <div class="memory-bar">
+                <div id="memoryFill" class="memory-fill"></div>
+            </div>
+        </div>
+        
+        <div class="info-grid">
+            <div class="info-card">
+                <div class="info-icon">🎮</div>
+                <div class="info-label">Рекомендуемый режим</div>
+                <div class="info-value" id="mode">—</div>
+            </div>
+            <div class="info-card">
+                <div class="info-icon">📊</div>
+                <div class="info-label">Качество контента</div>
+                <div class="info-value" id="quality">—</div>
+            </div>
+        </div>
+        
+        <div id="recommendation" class="recommendation">
+            <div class="recommendation-title">
+                <span>💡</span> Рекомендация
+            </div>
+            <div class="recommendation-text" id="recommendText">
+                Анализируем ваше устройство...
+            </div>
+        </div>
+        
+        <div class="badge" id="supportBadge">⏳ Проверка поддержки...</div>
+        <div class="note">
+            🔒 API возвращает приблизительное значение, округлённое до степеней двойки (0.25, 0.5, 1, 2, 4, 8 ГБ)<br>
+            Это сделано для защиты приватности (предотвращает fingerprinting)
+        </div>
+    </div>
+    
+    <script>
+        const ramSpan = document.getElementById('ramNumber');
+        const modeSpan = document.getElementById('mode');
+        const qualitySpan = document.getElementById('quality');
+        const recommendText = document.getElementById('recommendText');
+        const memoryFill = document.getElementById('memoryFill');
+        const supportBadge = document.getElementById('supportBadge');
+        
+        function getMemoryInfo(ram) {
+            // Значения округлены до степеней двойки
+            const memoryMap = {
+                0.25: { mode: '🔋 Экономичный', quality: 'Базовое', fill: 'low', rec: 'Рекомендуется загружать упрощённую версию приложения. Отключите тяжёлые анимации и эффекты.' },
+                0.5: { mode: '🔋 Экономичный', quality: 'Базовое', fill: 'low', rec: 'Устройство с ограниченной памятью. Оптимизируйте количество одновременно открытых вкладок.' },
+                1: { mode: '⚖️ Стандартный', quality: 'Среднее', fill: 'medium', rec: 'Достаточно для комфортной работы. Можно включить базовые анимации.' },
+                2: { mode: '⚖️ Стандартный', quality: 'Среднее', fill: 'medium', rec: 'Оптимально для большинства веб-приложений. Рекомендуется использовать стандартные настройки.' },
+                4: { mode: '🚀 Производительный', quality: 'Высокое', fill: 'high', rec: 'Мощное устройство. Можно включить все эффекты, HD-графику и сложные анимации.' },
+                8: { mode: '⚡ Максимальный', quality: 'Ultra', fill: 'max', rec: 'Флагманское устройство. Доступны максимальные настройки графики, 4K видео и сложные 3D-эффекты.' }
+            };
+            
+            return memoryMap[ram] || memoryMap[4];
+        }
+        
+        function updateUI(ram) {
+            const info = getMemoryInfo(ram);
+            
+            ramSpan.textContent = ram;
+            modeSpan.textContent = info.mode;
+            qualitySpan.textContent = info.quality;
+            recommendText.textContent = info.rec;
+            
+            memoryFill.className = `memory-fill ${info.fill}`;
+            
+            // Анимация заполнения
+            const fillWidth = { low: '25%', medium: '50%', high: '75%', max: '100%' };
+            memoryFill.style.width = fillWidth[info.fill];
+        }
+        
+        // Проверка поддержки API
+        if ('deviceMemory' in navigator) {
+            const ram = navigator.deviceMemory;
+            supportBadge.innerHTML = `✅ Device Memory API поддерживается | RAM: ${ram} ГБ`;
+            supportBadge.style.background = '#e8f5e9';
+            supportBadge.style.color = '#2e7d32';
+            updateUI(ram);
+        } else {
+            supportBadge.innerHTML = '❌ Device Memory API не поддерживается (Chrome/Edge 63+)';
+            supportBadge.style.background = '#ffebee';
+            supportBadge.style.color = '#c62828';
+            
+            // Fallback: предполагаем 4 ГБ
+            updateUI(4);
+        }
+        
+        // Дополнительная информация в консоль для презентации
+        console.log('=== Device Memory API Demo ===');
+        console.log('Поддержка:', 'deviceMemory' in navigator);
+        if ('deviceMemory' in navigator) {
+            console.log('RAM:', navigator.deviceMemory, 'ГБ');
+        }
+        console.log('==============================');
+    </script>
+</body>
+</html>
