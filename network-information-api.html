@@ -1,85 +1,220 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Notifications</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Info API - Демо</title>
     <style>
         body {
-            font-family: system-ui;
-            max-width: 400px;
-            margin: 100px auto;
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f7;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            margin: 0 0 8px 0;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .network-icon {
+            font-size: 56px;
             text-align: center;
+            margin: 10px 0;
         }
-        button {
-            padding: 12px 24px;
-            margin: 10px;
-            cursor: pointer;
-            background: #007AFF;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
+        
+        .type-badge {
+            background: #e9ecef;
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 500;
+            margin: 10px 0;
         }
-        .status {
+        
+        .quality {
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 500;
+            margin: 15px 0;
+        }
+        
+        .good { background: #e8f5e9; color: #2e7d32; }
+        .medium { background: #fff3e0; color: #e65100; }
+        .poor { background: #ffebee; color: #c62828; }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            font-family: monospace;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .recommend {
+            background: #f0f7ff;
+            padding: 16px;
+            border-radius: 12px;
             margin-top: 20px;
-            padding: 10px;
-            background: #f0f0f0;
-            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .note {
+            background: #fff8e7;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            color: #b85c00;
+            margin-top: 20px;
+        }
+        
+        .note code {
+            background: #ffecb3;
+            padding: 2px 6px;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
-    <h1>🔔 Уведомления</h1>
+    <h1>📡 Network Information API</h1>
+    <div class="subtitle">Информация о сетевом соединении (приблизительная)</div>
     
-    <button id="requestBtn">📢 Запросить разрешение</button>
-    <button id="notifyBtn" disabled>📢 Показать уведомление</button>
+    <div class="card">
+        <div class="network-icon" id="icon">📶</div>
+        <div style="text-align: center;">
+            <span id="typeBadge" class="type-badge">—</span>
+        </div>
+        
+        <div id="quality" class="quality">—</div>
+        
+        <div class="info-row">
+            <span>⚡ Скорость загрузки (приблизительно)</span>
+            <span id="speed"><strong>—</strong> Mbps</span>
+        </div>
+        <div class="info-row">
+            <span>⏱️ Задержка (RTT)</span>
+            <span id="rtt"><strong>—</strong> ms</span>
+        </div>
+        <div class="info-row">
+            <span>💾 Режим экономии трафика</span>
+            <span id="saveData"><strong>—</strong></span>
+        </div>
+        
+        <div id="recommend" class="recommend"></div>
+        
+        <div class="note">
+            ⚠️ <strong>Важно:</strong> Значения являются приблизительными и могут не соответствовать реальной скорости интернета.<br>
+            Браузер определяет <code>effectiveType</code> на основе текущей активности: <code>slow-2g</code>, <code>2g</code>, <code>3g</code>, <code>4g</code>.<br>
+            Точную скорость интернета API не показывает.
+        </div>
+    </div>
     
-    <div id="status" class="status"></div>
+    <div class="card">
+        <h3>📋 Что означают значения?</h3>
+        <ul style="line-height: 1.8; color: #555;">
+            <li><strong>slow-2g / 2g</strong> — очень медленное соединение (до 50 кбит/с)</li>
+            <li><strong>3g</strong> — среднее соединение (до 1.5 Мбит/с)</li>
+            <li><strong>4g</strong> — быстрое соединение (от 2 Мбит/с)</li>
+            <li><strong>RTT</strong> — время отклика (чем меньше, тем лучше)</li>
+            <li><strong>saveData</strong> — пользователь включил экономию трафика в браузере</li>
+        </ul>
+    </div>
     
     <script>
-        const requestBtn = document.getElementById('requestBtn');
-        const notifyBtn = document.getElementById('notifyBtn');
-        const statusDiv = document.getElementById('status');
+        const conn = navigator.connection;
         
-        function updateStatus() {
-            const permission = Notification.permission;
-            if (permission === 'default') {
-                statusDiv.innerHTML = '✅ Разрешение есть';
-                statusDiv.style.background = '#e8f5e9';
-                notifyBtn.disabled = false;
-            } else if (permission === 'denied') {
-                statusDiv.innerHTML = '❌ Разрешение запрещено';
-                statusDiv.style.background = '#ffebee';
-            } else {
-                statusDiv.innerHTML = '⏳ Нажмите "Запросить разрешение"';
-                statusDiv.style.background = '#f0f0f0';
-                notifyBtn.disabled = true;
-            }
+        function formatType(type) {
+            const types = {
+                'slow-2g': '🐢 Очень медленный (2G)',
+                '2g': '🐢 Медленный (2G)',
+                '3g': '📱 Средний (3G)',
+                '4g': '🚀 Быстрый (4G)',
+                '5g': '✨ Очень быстрый (5G)'
+            };
+            return types[type] || type?.toUpperCase() || 'Неизвестно';
         }
         
-        async function requestPermission() {
-            const permission = await Notification.requestPermission();
-            updateStatus();
+        function getQualityClass(speed) {
+            if (speed >= 4) return 'good';
+            if (speed >= 1.5) return 'medium';
+            return 'poor';
+        }
+        
+        function getQualityText(speed) {
+            if (speed >= 4) return '🚀 Отличное соединение';
+            if (speed >= 1.5) return '⚠️ Среднее соединение';
+            return '🐢 Медленное соединение';
+        }
+        
+        function getRecommendation(speed, saveData, effectiveType) {
+            if (saveData) {
+                return '📉 <strong>Режим экономии трафика включен</strong><br>Рекомендуется загружать облегчённые версии контента, отключить автовоспроизведение видео.';
+            }
             
-            if (permission === 'granted') {
-                new Notification('✅ Готово!', {
-                    body: 'Теперь можно отправлять уведомления'
-                });
+            if (effectiveType === '4g' || effectiveType === '5g' || speed >= 4) {
+                return '🎬 <strong>Высокоскоростное соединение</strong><br>Можно загружать видео в HD качестве, использовать высокое разрешение изображений.';
             }
+            
+            if (effectiveType === '3g' || speed >= 1.5) {
+                return '📺 <strong>Средняя скорость</strong><br>Рекомендуется качество 720p, оптимизированные изображения.';
+            }
+            
+            return '📄 <strong>Медленное соединение</strong><br>Рекомендуется только текст, изображения низкого качества, отключить видео.';
         }
         
-        function showNotification() {
-            new Notification('🔔 Привет!', {
-                body: 'Это тестовое уведомление'
-            });
+        function updateUI() {
+            if (!conn) return;
+            
+            const effectiveType = conn.effectiveType || 'unknown';
+            const downlink = conn.downlink || 0;
+            const rtt = conn.rtt || '—';
+            const saveData = conn.saveData || false;
+            
+            // Иконка
+            const icons = { wifi: '📶', cellular: '📱', ethernet: '🔌' };
+            document.getElementById('icon').textContent = icons[conn.type] || '🌐';
+            
+            // Тип
+            document.getElementById('typeBadge').textContent = formatType(effectiveType);
+            
+            // Качество
+            const qualityClass = getQualityClass(downlink);
+            document.getElementById('quality').textContent = getQualityText(downlink);
+            document.getElementById('quality').className = `quality ${qualityClass}`;
+            
+            // Параметры
+            document.getElementById('speed').innerHTML = `<strong>${downlink.toFixed(1) || '—'}</strong> Mbps`;
+            document.getElementById('rtt').innerHTML = `<strong>${rtt}</strong> ms`;
+            document.getElementById('saveData').innerHTML = saveData ? '<strong>✅ Включена</strong>' : '<strong>❌ Отключена</strong>';
+            
+            // Рекомендация
+            document.getElementById('recommend').innerHTML = getRecommendation(downlink, saveData, effectiveType);
         }
         
-        requestBtn.onclick = requestPermission;
-        notifyBtn.onclick = showNotification;
-        
-        if ('Notification' in window) {
-            updateStatus();
+        if (conn) {
+            updateUI();
+            conn.addEventListener('change', updateUI);
         } else {
-            statusDiv.innerHTML = '❌ API не поддерживается';
+            document.querySelector('.card').innerHTML += '<div style="color: red; padding: 20px;">❌ Network Information API не поддерживается в этом браузере</div>';
         }
     </script>
 </body>
